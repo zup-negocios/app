@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Offer } from "../types";
 import { useAppState } from "./AppProvider";
-import { offerProgress } from "../utils/business";
+import { currency, offerProgress } from "../utils/business";
 import { OfferCountdown } from "./OfferCountdown";
 import { Package } from "lucide-react";
 

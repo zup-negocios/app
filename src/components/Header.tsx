@@ -6,7 +6,7 @@ import { useState } from "react";
 function ZuppiLogoInline() {
   return (
     <Link to="/" className="hover:opacity-90 transition-opacity">
-      <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-8 w-auto" />
+      <img src="/assets/zuppi-logo-dark.svg" alt="Zuppi" className="h-8 w-auto" />
     </Link>
   );
 }

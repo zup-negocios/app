@@ -46,7 +46,7 @@ const adminNav: NavItem[] = [
 function ZuppiLogo() {
   return (
     <Link to="/" className="flex items-center px-5 py-4 border-b border-gray-100 hover:opacity-90 transition-opacity">
-      <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-8 w-auto" />
+      <img src="/assets/zuppi-logo-dark.svg" alt="Zuppi" className="h-8 w-auto" />
     </Link>
   );
 }

@@ -119,7 +119,7 @@ export function AuthPage() {
       <Link to="/auth" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600"><ArrowLeft size={16} /> trocar tipo de acesso</Link>
       <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-4">
         <section className="bg-gray-950 text-white rounded-2xl p-6 space-y-5">
-          <img src="/assets/zuppi-logo-dark.png" alt="Zuppi logo" className="h-12 w-auto" />
+          <img src="/assets/zuppi-logo-dark.svg" alt="Zuppi logo" className="h-12 w-auto" />
           <div>
             <p className="text-sm font-semibold text-orange-400 uppercase">Area do fornecedor</p>
             <h1 className="text-3xl font-bold">Entrar para vender por volume</h1>

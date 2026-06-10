@@ -42,7 +42,7 @@ export function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-12 w-auto mx-auto" />
+          <img src="/assets/zuppi-logo-dark.svg" alt="Zuppi" className="h-12 w-auto mx-auto" />
           <p className="text-gray-500 text-sm mt-2">O futuro das vendas B2B é coletivo.</p>
         </div>
 
