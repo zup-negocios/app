@@ -1,61 +1,88 @@
 import { Link } from "react-router-dom";
 import type { Offer } from "../types";
 import { useAppState } from "./AppProvider";
-import { currency, dateLabel, formatGoal, offerProgress } from "../utils/business";
+import { currency, offerProgress } from "../utils/business";
 import { OfferCountdown } from "./OfferCountdown";
-import { ProgressBarMeta } from "./ProgressBarMeta";
-import { StarRating } from "./StarRating";
+import { Package } from "lucide-react";
 
 export function CardOferta({ offer }: { offer: Offer }) {
-  const { getRatingSummary, session, suppliers } = useAppState();
+  const { session, suppliers } = useAppState();
   const progress = offerProgress(offer);
-  const economy = offer.normalPrice - offer.zuppiPrice;
-  const supplierRating = getRatingSummary(offer.supplierId, "supplier");
-  const isLoggedIn = !!session;
+  const pct = Math.min(100, Math.round((progress.current / progress.target) * 100));
+  const economy = Math.round(((offer.normalPrice - offer.zuppiPrice) / offer.normalPrice) * 100);
   const supplier = suppliers.find(s => s.id === offer.supplierId);
 
   return (
-    <div className="card p-4 space-y-3">
-      <div className="flex justify-between items-start gap-3">
-        <div>
-          <h3 className="font-bold text-lg">{offer.product}</h3>
-          <p className="text-sm text-gray-500">{offer.brand} · {offer.category}</p>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      <div className="flex gap-4 p-4">
+        {/* image placeholder */}
+        <div className="w-20 h-20 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+          <Package size={32} className="text-orange-300" />
         </div>
-        <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 whitespace-nowrap">{offer.status.replace(/_/g, " ")}</span>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h3 className="font-bold text-gray-900 leading-tight">{offer.product}</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{offer.brand} · {offer.category}</p>
+            </div>
+            {economy > 0 && (
+              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                -{economy}%
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-end gap-4 mt-2">
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase font-medium">Preço atual</p>
+              <p className="text-base font-black text-gray-800">{currency(offer.zuppiPrice)}<span className="text-xs font-normal text-gray-400">/{offer.unit}</span></p>
+              <p className="text-[10px] text-gray-400 line-through">{currency(offer.normalPrice)}/{offer.unit}</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="text-[10px] text-gray-400 uppercase font-medium">Meta</p>
+              <p className="text-base font-black text-orange-500">{progress.target.toLocaleString("pt-BR")}</p>
+              <p className="text-[10px] text-gray-400">{offer.unit}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Supplier row — blurred if not logged in */}
-      <div className={`flex items-center gap-2 text-xs rounded-lg px-2 py-1.5 relative ${!isLoggedIn ? "bg-gray-50" : ""}`}>
-        {isLoggedIn ? (
-          <>
-            <StarRating value={supplierRating.average} size={14} />
-            <span className="text-gray-600">{supplierRating.count ? supplierRating.average.toFixed(1) : "sem nota"}</span>
-            <span className="text-gray-400">·</span>
-            <span className="font-medium text-gray-700">{supplier?.companyName || "Fornecedor"}</span>
-          </>
+      {/* progress */}
+      <div className="px-4 pb-2">
+        <div className="flex justify-between items-center mb-1">
+          <p className="text-xs text-gray-500">{progress.current.toLocaleString("pt-BR")} / {progress.target.toLocaleString("pt-BR")} {offer.unit}</p>
+          <p className="text-xs font-bold text-orange-500">{pct}%</p>
+        </div>
+        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-orange-500 transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* footer */}
+      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-50">
+        <div className="flex items-center gap-2">
+          <OfferCountdown deadline={offer.deadline} compact />
+        </div>
+        {session ? (
+          <Link
+            to={`/ofertas/${offer.id}`}
+            className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-1.5 rounded-xl transition-colors"
+          >
+            Participar
+          </Link>
         ) : (
-          <div className="flex items-center gap-2 w-full">
-            <div className="flex gap-0.5">{[1,2,3,4,5].map(i=><span key={i} className="w-3 h-3 rounded-sm bg-gray-200" />)}</div>
-            <span className="text-gray-300 select-none blur-sm font-medium">Fornecedor Parceiro Zuppi</span>
-            <span className="ml-auto text-[10px] font-semibold text-orange-500 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-              🔒 Assine para ver
-            </span>
-          </div>
+          <Link
+            to="/login"
+            className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-1.5 rounded-xl transition-colors"
+          >
+            Ver oferta
+          </Link>
         )}
       </div>
-      <div className="grid sm:grid-cols-2 gap-2 text-sm">
-        <p>Preco normal: <b>{currency(offer.normalPrice)}</b>/{offer.unit}</p>
-        <p>Preco Zuppi: <b className="text-orange-600">{currency(offer.zuppiPrice)}</b>/{offer.unit}</p>
-        <p>Economia: <b className="text-green-700">{currency(economy)}</b>/{offer.unit}</p>
-        <p>Compra minima: <b>{offer.minimumPurchasePerBuyer} {offer.unit}</b></p>
-        <p>Meta: <b>{formatGoal(offer, progress.target)}</b></p>
-        <p>Faltam: <b>{formatGoal(offer, progress.missing)}</b></p>
-        <p>Prazo: <b>{dateLabel(offer.deadline)}</b></p>
-        <p>Regiao: <b>{offer.region}</b></p>
-      </div>
-      <OfferCountdown deadline={offer.deadline} compact />
-      <ProgressBarMeta current={progress.current} total={progress.target} />
-      <Link to={`/ofertas/${offer.id}`} className="btn-primary inline-block">Participar</Link>
     </div>
   );
 }

@@ -40,33 +40,69 @@ export function BuyerDashboardPage() {
   const metaBatida = myReservations.filter(r => ["meta_batida", "confirmado", "meta_atingida"].includes(r.status)).length;
   const totalSpent = myReservations.reduce((a, r) => a + r.totalAmount, 0);
 
+  const CATEGORY_ICONS: Record<string, string> = {
+    alimentos: "🥗", bebidas: "🥤", limpeza: "🧹", higiene: "🧴",
+    construção: "🔨", construcao: "🔨", petshop: "🐾", farmacia: "💊",
+    padaria: "🍞", restaurante: "🍽️", outro: "📦",
+  };
+
   return (
     <DashboardLayout role="buyer">
-      <div className="space-y-6 max-w-6xl">
-        {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-gray-900 to-gray-700 text-white p-6">
-          <h1 className="text-2xl font-bold">Olá, {buyer?.contactName?.split(" ")[0] || "comprador"}!</h1>
-          <p className="text-gray-300 mt-1">Compre junto. Pague menos. Todo mundo ganha.</p>
+      <div className="space-y-5 max-w-2xl mx-auto">
+
+        {/* Greeting */}
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">
+            Olá, {buyer?.contactName?.split(" ")[0] || "comprador"}! 👋
+          </h1>
+        </div>
+
+        {/* Promo banner */}
+        <div className="rounded-2xl bg-gray-900 text-white p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-bold leading-snug">Participe de compras coletivas<br />e desbloqueie preços melhores!</p>
+          </div>
+          <Link
+            to="/ofertas"
+            className="flex-shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors whitespace-nowrap"
+          >
+            Ver compras
+          </Link>
         </div>
 
         {/* Metrics */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          <MetricCard title="Ofertas abertas" value={String(activeOffers.length)} sub="disponíveis agora" icon={Tag} />
-          <MetricCard title="Minhas reservas" value={String(myReservations.length)} sub={`${metaBatida} meta(s) atingida(s)`} icon={ShoppingCart} iconBg="bg-green-50" iconColor="text-green-600" />
-          <MetricCard title="Total reservado" value={currency(totalSpent)} sub="valor potencial" icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" />
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
+            <p className="text-2xl font-black text-orange-500">{activeOffers.length}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">ofertas abertas</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
+            <p className="text-2xl font-black text-green-600">{myReservations.length}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">minhas reservas</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
+            <p className="text-2xl font-black text-blue-600">{metaBatida}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">metas atingidas</p>
+          </div>
         </div>
 
         {/* Categories */}
-        <div className="card p-4">
-          <h2 className="font-bold text-gray-800 mb-3">Explorar por categoria</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.filter(c => c.active).sort((a, b) => a.order - b.order).map(c => (
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-bold text-gray-800">Categorias</h2>
+            <Link to="/ofertas" className="text-xs text-orange-500 font-semibold">Ver todas</Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+            {categories.filter(c => c.active).sort((a, b) => a.order - b.order).slice(0, 7).map(c => (
               <Link
                 key={c.id}
                 to={`/ofertas?cat=${c.id}`}
-                className="px-3 py-1.5 rounded-xl bg-gray-50 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-700 border border-gray-100 hover:border-orange-200 transition-colors"
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                {c.name}
+                <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-2xl border border-orange-100 hover:bg-orange-100 transition-colors">
+                  {CATEGORY_ICONS[c.name.toLowerCase()] || "📦"}
+                </div>
+                <p className="text-[11px] font-medium text-gray-600 text-center w-14 leading-tight">{c.name}</p>
               </Link>
             ))}
           </div>
@@ -75,20 +111,21 @@ export function BuyerDashboardPage() {
         {/* Highlighted offers */}
         <section>
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-bold text-gray-800">Ofertas em destaque</h2>
-            <Link to="/ofertas" className="text-sm text-orange-600 font-medium hover:text-orange-700 flex items-center gap-1">
-              Ver todas <ChevronRight size={14} />
+            <h2 className="font-bold text-gray-800">Compras em destaque</h2>
+            <Link to="/ofertas" className="text-xs text-orange-500 font-semibold flex items-center gap-1">
+              Ver todas <ChevronRight size={12} />
             </Link>
           </div>
-          <div className="grid xl:grid-cols-2 gap-4">
+          <div className="space-y-3">
             {highlighted.map(offer => <CardOferta key={offer.id} offer={offer} />)}
           </div>
           {highlighted.length === 0 && (
-            <div className="card p-8 text-center text-gray-400">
-              Nenhuma oferta disponível no momento. Verifique novamente em breve.
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">
+              Nenhuma oferta disponível no momento.
             </div>
           )}
         </section>
+
       </div>
     </DashboardLayout>
   );
