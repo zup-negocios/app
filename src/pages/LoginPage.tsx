@@ -47,42 +47,58 @@ export function LoginPage() {
       <div className="flex flex-1 flex-col lg:flex-row">
 
         {/* LEFT — brand panel */}
-        <div className="relative flex flex-col items-center justify-center lg:w-[54%] bg-[#FFF7F0] px-8 py-14 overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-orange-100/60 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-orange-200/30 -translate-x-1/3 translate-y-1/3 pointer-events-none" />
+        <div className="relative hidden lg:flex flex-col items-center justify-center lg:w-[54%] bg-gray-950 px-10 py-14 overflow-hidden">
+          {/* background glow */}
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(249,115,22,0.18)_0%,_transparent_60%)] pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(249,115,22,0.12)_0%,_transparent_60%)] pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col items-center lg:items-start gap-7 max-w-md w-full">
-            <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-12 w-auto" />
+          <div className="relative z-10 flex flex-col gap-10 max-w-md w-full">
+            {/* logo */}
+            <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-10 w-auto" />
 
-            <div className="text-center lg:text-left">
-              <h1 className="text-3xl xl:text-4xl font-black text-gray-900 leading-tight">
-                O futuro das vendas{" "}
-                <span className="text-orange-500">B2B</span> é{" "}
-                <span className="text-orange-500">coletivo.</span>
+            {/* headline */}
+            <div>
+              <h1 className="text-4xl xl:text-5xl font-black text-white leading-tight">
+                O futuro das<br />
+                vendas <span className="text-orange-500">B2B</span><br />
+                é <span className="text-orange-500">coletivo.</span>
               </h1>
-              <p className="mt-3 text-gray-500 text-base">
-                Compre junto. <span className="font-semibold text-orange-500">Pague menos.</span> Todo mundo ganha.
+              <p className="mt-4 text-gray-400 text-lg leading-relaxed">
+                Compre junto. Pague menos.<br />
+                <span className="text-orange-400 font-semibold">Todo mundo ganha.</span>
               </p>
             </div>
 
-            {/* Hero cart — official brand image */}
-            <div className="w-full flex justify-center lg:justify-start">
-              <img
-                src="/assets/zuppi-hero.png"
-                alt="Zuppi compras coletivas"
-                className="w-64 lg:w-80 xl:w-88 object-contain"
-              />
-            </div>
-
-            <div className="hidden lg:flex flex-col gap-3 w-full">
-              {FEATURES.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                    <Icon size={15} className="text-orange-500" />
-                  </div>
-                  <p className="text-sm text-gray-600">{text}</p>
+            {/* stats */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { value: "+300", label: "empresas ativas" },
+                { value: "28%", label: "economia média" },
+                { value: "R$2M+", label: "em pedidos" },
+              ].map(({ value, label }) => (
+                <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                  <p className="text-2xl font-black text-orange-400">{value}</p>
+                  <p className="text-xs text-gray-400 mt-1">{label}</p>
                 </div>
               ))}
+            </div>
+
+            {/* features */}
+            <div className="flex flex-col gap-3">
+              {FEATURES.map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                    <Icon size={15} className="text-orange-400" />
+                  </div>
+                  <p className="text-sm text-gray-300">{text}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* quote */}
+            <div className="border-l-2 border-orange-500 pl-4">
+              <p className="text-gray-400 text-sm italic">"Reduzimos 32% no custo de insumos no primeiro mês usando a Zuppi."</p>
+              <p className="text-orange-400 text-xs font-semibold mt-1">— Mercado Bom Preço, SP</p>
             </div>
           </div>
         </div>
