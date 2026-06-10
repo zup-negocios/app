@@ -3,26 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { CardOferta } from "../components/CardOferta";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
-import { currency } from "../utils/business";
-import { Tag, ShoppingCart, TrendingUp, ChevronRight } from "lucide-react";
-
-function MetricCard({ title, value, sub, icon: Icon, iconBg = "bg-orange-50", iconColor = "text-orange-500" }: {
-  title: string; value: string; sub?: string;
-  icon: React.ElementType; iconBg?: string; iconColor?: string;
-}) {
-  return (
-    <div className="card p-5 flex items-start gap-4">
-      <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
-        <Icon size={20} className={iconColor} />
-      </div>
-      <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-gray-800 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  );
-}
+import { ChevronRight } from "lucide-react";
 
 export function BuyerDashboardPage() {
   const { session, buyers, offers, reservations, categories } = useAppState();
@@ -38,7 +19,6 @@ export function BuyerDashboardPage() {
 
   const myReservations = reservations.filter(r => r.buyerId === session.id);
   const metaBatida = myReservations.filter(r => ["meta_batida", "confirmado", "meta_atingida"].includes(r.status)).length;
-  const totalSpent = myReservations.reduce((a, r) => a + r.totalAmount, 0);
 
   const CATEGORY_ICONS: Record<string, string> = {
     alimentos: "🥗", bebidas: "🥤", limpeza: "🧹", higiene: "🧴",

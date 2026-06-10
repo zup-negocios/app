@@ -1,16 +1,15 @@
 import { Link } from "react-router-dom";
 import type { Offer } from "../types";
 import { useAppState } from "./AppProvider";
-import { currency, offerProgress } from "../utils/business";
+import { offerProgress } from "../utils/business";
 import { OfferCountdown } from "./OfferCountdown";
 import { Package } from "lucide-react";
 
 export function CardOferta({ offer }: { offer: Offer }) {
-  const { session, suppliers } = useAppState();
+  const { session } = useAppState();
   const progress = offerProgress(offer);
   const pct = Math.min(100, Math.round((progress.current / progress.target) * 100));
   const economy = Math.round(((offer.normalPrice - offer.zuppiPrice) / offer.normalPrice) * 100);
-  const supplier = suppliers.find(s => s.id === offer.supplierId);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
