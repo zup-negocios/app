@@ -17,6 +17,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { RatingsPage } from "./pages/RatingsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SupplierCreateOfferPage, SupplierDashboardPage, SupplierOfferDetailPage, SupplierPreOrdersPage } from "./pages/SupplierPages";
+import { SupplierOffersPage, SupplierPreOrderDetailPage } from "./pages/SupplierOffersPage";
 import { SupplierClientsReportPage, SupplierPurchasesReportPage } from "./pages/SupplierReportsPage";
 import { TutorialPage } from "./pages/TutorialPage";
 import { ViabilitySimulatorPage } from "./pages/ViabilitySimulatorPage";
@@ -49,9 +50,10 @@ export default function App() {
           <Route path="/comprador/compras-realizadas" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/fornecedor" element={<SupplierDashboardPage />} />
           <Route path="/fornecedor/criar-oferta" element={<SupplierCreateOfferPage />} />
-          <Route path="/fornecedor/ofertas" element={<SupplierDashboardPage />} />
+          <Route path="/fornecedor/ofertas" element={<SupplierOffersPage />} />
           <Route path="/fornecedor/ofertas/:id" element={<SupplierOfferDetailPage />} />
           <Route path="/fornecedor/pre-pedidos" element={<SupplierPreOrdersPage />} />
+          <Route path="/fornecedor/pre-pedidos/:id" element={<SupplierPreOrderDetailPage />} />
           <Route path="/fornecedor/relatorio-clientes" element={<SupplierClientsReportPage />} />
           <Route path="/fornecedor/relatorio-compras" element={<SupplierPurchasesReportPage />} />
           <Route path="/fornecedor/simulador" element={<ViabilitySimulatorPage />} />

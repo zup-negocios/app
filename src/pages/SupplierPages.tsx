@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { DashboardLayout } from "../components/DashboardLayout";
@@ -9,7 +9,7 @@ import {
 } from "../utils/business";
 import {
   TrendingUp, Users, DollarSign, Package, PlusCircle, Eye,
-  Edit3, FileText, ChevronRight, Sparkles,
+  FileText, Sparkles,
   AlertCircle, Calendar, MapPin, CreditCard, Truck, CheckCircle,
   Lock, Crown, ExternalLink, Info, ImagePlus, X,
 } from "lucide-react";
@@ -35,20 +35,20 @@ const statusColors: Record<string, string> = {
   pausada: "badge-pausada",
 };
 
-function MetricCard({ title, value, sub, icon: Icon, iconBg = "bg-orange-50", iconColor = "text-orange-500" }: {
+function MetricCard({ title, value, sub, icon: Icon }: {
   title: string; value: string; sub?: string;
-  icon: React.ElementType; iconBg?: string; iconColor?: string;
+  icon: React.ElementType;
 }) {
   return (
-    <div className="card p-5 flex items-start gap-4">
-      <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
-        <Icon size={20} className={iconColor} />
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 h-full">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+          <Icon size={16} className="text-gray-400" />
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-gray-800 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      </div>
+      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <p className="text-xs text-gray-500 mt-1">{title}</p>
+      {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -56,7 +56,7 @@ function MetricCard({ title, value, sub, icon: Icon, iconBg = "bg-orange-50", ic
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 export function SupplierDashboardPage() {
-  const { session, suppliers, buyers, offers, reservations, requestOfferEdit } = useAppState();
+  const { session, suppliers, offers, reservations } = useAppState();
   const navigate = useNavigate();
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
@@ -71,32 +71,47 @@ export function SupplierDashboardPage() {
   const uniqueBuyers = new Set(myReservations.map(r => r.buyerId)).size;
   const waiting = myReservations.filter(r => ["aguardando_meta", "em_andamento"].includes(r.status)).length;
 
-  const buyerReport = buyers
-    .map(buyer => {
-      const bRes = myReservations.filter(r => r.buyerId === buyer.id);
-      if (!bRes.length) return null;
-      return {
-        buyer,
-        totalReservations: bRes.length,
-        totalQuantity: bRes.reduce((a, r) => a + r.quantity, 0),
-        totalValue: bRes.reduce((a, r) => a + r.totalAmount, 0),
-        lastStatus: bRes[bRes.length - 1]?.status ?? "aguardando_meta",
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
-    .sort((a, b) => b.totalValue - a.totalValue);
+  // Priorities (max 3)
+  const priorities = useMemo(() => {
+    const items: { id: string; text: string; cta: string; href: string }[] = [];
+    const sortedByProgress = [...myOffers]
+      .filter(o => ["ativa", "aberta"].includes(o.status))
+      .map(o => ({ offer: o, progress: offerProgress(o) }))
+      .sort((a, b) => b.progress.percent - a.progress.percent);
+
+    for (const { offer, progress } of sortedByProgress) {
+      if (items.length >= 2) break;
+      if (progress.percent >= 70 && progress.percent < 100) {
+        const missingLabel = offer.targetType === "amount" ? currency(progress.missing) : `${progress.missing.toLocaleString("pt-BR")} ${offer.unit}`;
+        items.push({ id: offer.id, text: `${offer.product} está com ${progress.percent}% da meta atingida. Faltam ${missingLabel}.`, cta: "Ver oferta", href: `/fornecedor/ofertas/${offer.id}` });
+      }
+    }
+    const lowTraction = sortedByProgress.find(({ progress }) => progress.percent < 30);
+    if (lowTraction && items.length < 3) {
+      items.push({ id: `low-${lowTraction.offer.id}`, text: `${lowTraction.offer.product} tem baixa tração. Revise preço, foto ou prazo.`, cta: "Editar oferta", href: `/fornecedor/ofertas/${lowTraction.offer.id}?edit=1` });
+    }
+    if (waiting > 0 && items.length < 3) {
+      items.push({ id: "waiting", text: `Você recebeu ${waiting} pré-pedido(s) aguardando meta.`, cta: "Ver pré-pedidos", href: "/fornecedor/pre-pedidos" });
+    }
+    return items.slice(0, 3);
+  }, [myOffers, waiting]);
+
+  const recentOffers = myOffers.slice(0, 5);
+  const recentReservations = [...myReservations]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   return (
     <DashboardLayout role="supplier">
-      <div className="space-y-6 max-w-6xl">
-        {/* Welcome */}
+      <div className="space-y-8 max-w-6xl">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-xl font-bold text-gray-800">
               Olá, {supplier?.contactName?.split(" ")[0] || "fornecedor"}!
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {supplier?.companyName} · Plano <span className="font-semibold text-orange-600 capitalize">{supplier?.planoFornecedor}</span>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {supplier?.companyName} · Plano <span className="font-medium text-gray-600 capitalize">{supplier?.planoFornecedor === "assinante" ? "Assinante" : "Gratuito"}</span>
             </p>
           </div>
           <button className="btn-primary" onClick={() => navigate("/fornecedor/criar-oferta")}>
@@ -104,165 +119,142 @@ export function SupplierDashboardPage() {
           </button>
         </div>
 
-        {/* Metrics */}
+        {/* Main metrics */}
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard title="Ofertas ativas" value={String(activeOffers)} sub={`${reachedOffers} meta(s) atingida(s)`} icon={TrendingUp} />
-          <MetricCard title="Total reservado" value={currency(totalReservedAmount)} sub="valor potencial" icon={DollarSign} iconBg="bg-green-50" iconColor="text-green-600" />
-          <MetricCard title="Compradores" value={String(uniqueBuyers)} sub="participantes" icon={Users} iconBg="bg-blue-50" iconColor="text-blue-600" />
-          <MetricCard title="Aguardando meta" value={String(waiting)} sub="pré-pedidos" icon={Package} iconBg="bg-amber-50" iconColor="text-amber-600" />
+          <MetricCard title="Total reservado" value={currency(totalReservedAmount)} sub="valor potencial" icon={DollarSign} />
+          <MetricCard title="Compradores interessados" value={String(uniqueBuyers)} sub="participantes únicos" icon={Users} />
+          <MetricCard title="Pré-pedidos" value={String(myReservations.length)} sub="em andamento" icon={Package} />
         </div>
 
-        {/* Pending actions */}
-        {(() => {
-          const alerts: string[] = [];
-          const nearGoal = myOffers.find(o => ["ativa", "aberta"].includes(o.status) && offerProgress(o).percent >= 70 && offerProgress(o).percent < 100);
-          if (nearGoal) alerts.push(`A oferta ${nearGoal.product} está com ${offerProgress(nearGoal).percent}% da meta atingida.`);
-          if (waiting > 0) alerts.push(`Você tem ${waiting} pré-pedido(s) aguardando meta.`);
-          const noImageCount = myOffers.filter(o => !o.imageBase64).length;
-          if (noImageCount > 0) alerts.push(`Adicione foto em ${noImageCount} oferta(s) para melhorar a conversão.`);
-          if (supplier?.planoFornecedor !== "assinante") alerts.push("Complete seus dados para liberar recursos do Plano Pro.");
-          if (alerts.length === 0) return null;
-          return (
-            <section className="card p-4 space-y-2">
-              <h2 className="font-bold text-gray-800 text-sm mb-1">Ações pendentes</h2>
-              {alerts.map((text, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-gray-600 bg-amber-50/60 border border-amber-100 rounded-xl px-3 py-2">
-                  <AlertCircle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
-                  <span>{text}</span>
+        {/* Priorities of the day */}
+        {priorities.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold text-gray-700 mb-3">Prioridades do dia</h2>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {priorities.map(p => (
+                <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col gap-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={14} className="text-orange-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-600 leading-relaxed">{p.text}</p>
+                  </div>
+                  <Link to={p.href} className="text-xs font-semibold text-orange-500 hover:text-orange-600 mt-auto">
+                    {p.cta} →
+                  </Link>
                 </div>
               ))}
-            </section>
-          );
-        })()}
+            </div>
+          </section>
+        )}
 
-        {/* My Offers */}
+        {/* My Offers — compact table */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">Minhas ofertas</h2>
-            <Link to="/ofertas" className="text-sm text-orange-600 font-medium hover:text-orange-700 flex items-center gap-1">
-              Ver todas <ChevronRight size={14} />
+            <h2 className="text-sm font-bold text-gray-700">Minhas ofertas</h2>
+            <Link to="/fornecedor/ofertas" className="text-xs text-orange-500 font-semibold hover:text-orange-600">
+              Ver todas
             </Link>
           </div>
-          <div className="space-y-3">
-            {myOffers.length === 0 && (
-              <div className="card p-8 text-center">
-                <Package size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="font-semibold text-gray-600">Nenhuma oferta ainda</p>
-                <p className="text-sm text-gray-400 mt-1 mb-4">Crie sua primeira oferta para começar a receber reservas.</p>
-                <button className="btn-primary mx-auto" onClick={() => navigate("/fornecedor/criar-oferta")}>
-                  <PlusCircle size={15} /> Criar oferta
-                </button>
-              </div>
-            )}
-            {myOffers.map(offer => {
-              const progress = offerProgress(offer);
-              const availability = offerAvailability(offer);
-              const offerRes = myReservations.filter(r => r.offerId === offer.id);
-              const pct = progress.percent;
-              return (
-                <div key={offer.id} className="card p-5 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                    <div className="flex-1 min-w-0 flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {offer.imageBase64
-                          ? <img src={offer.imageBase64} alt={offer.product} className="w-full h-full object-cover" />
-                          : <Package size={20} className="text-orange-300" />}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-bold text-gray-800">{offer.product}</h3>
-                          <span className={statusColors[offer.status] || "badge-rascunho"}>
-                            {offer.status.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-0.5">{offer.brand} · {offer.category}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <Link className="btn-secondary text-xs py-1.5 px-3" to={`/fornecedor/ofertas/${offer.id}`}>
-                        <Eye size={13} /> Detalhes
-                      </Link>
-                      <button className="btn-secondary text-xs py-1.5 px-3" onClick={() => {
-                        if (offerRes.length > 0) return requestOfferEdit(offer.id);
-                        navigate(`/fornecedor/ofertas/${offer.id}?edit=1`);
-                      }}>
-                        <Edit3 size={13} /> Editar
-                      </button>
-                      <Link className="btn-primary text-xs py-1.5 px-3" to={`/fornecedor/ofertas/${offer.id}?report=1`}>
-                        <FileText size={13} /> Relatório
-                      </Link>
-                    </div>
-                  </div>
 
-                  <div className="mt-4 grid sm:grid-cols-3 gap-3 text-sm text-gray-600">
-                    <p>Compradores: <b className="text-gray-800">{new Set(offerRes.map(r => r.buyerId)).size}</b></p>
-                    <p>Reservado: <b className="text-gray-800">{currency(offerRes.reduce((a, r) => a + r.totalAmount, 0))}</b></p>
-                    <p>Disponível: <b className="text-gray-800">{availability.availablePercent}%</b></p>
-                  </div>
-
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Progresso da meta</span>
-                      <span className={pct >= 100 ? "text-green-600 font-bold" : "font-medium"}>{pct}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-green-500" : "bg-orange-500"}`}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {formatGoal(offer, progress.current)} de {formatGoal(offer, progress.target)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Buyer report */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">Relatório de compradores</h2>
-            <span className="text-sm text-gray-500">{buyerReport.length} no total</span>
-          </div>
-
-          {supplier?.planoFornecedor !== "assinante" ? (
-            <div className="card p-6 text-center border-dashed border-2 border-orange-200 bg-orange-50/50">
-              <Lock size={28} className="mx-auto text-orange-400 mb-2" />
-              <p className="font-bold text-gray-700">Dados dos compradores bloqueados</p>
-              <p className="text-sm text-gray-500 mt-1 mb-4">
-                Ative o Plano Pro para ver empresa, CNPJ, contato e histórico completo dos compradores.
-              </p>
-              <button className="btn-primary mx-auto">
-                <Crown size={15} /> Ativar Plano Pro
+          {recentOffers.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+              <Package size={28} className="mx-auto text-gray-300 mb-2" />
+              <p className="text-sm font-medium text-gray-500">Nenhuma oferta ainda</p>
+              <button className="btn-primary mx-auto mt-3" onClick={() => navigate("/fornecedor/criar-oferta")}>
+                <PlusCircle size={15} /> Criar oferta
               </button>
             </div>
-          ) : buyerReport.length === 0 ? (
-            <div className="card p-6 text-center text-gray-400">Nenhum comprador participando ainda.</div>
           ) : (
-            <div className="card overflow-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    {["Empresa", "Responsável", "Cidade", "Contato", "Reservas", "Qtd. Total", "Valor Potencial", "Status"].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    {["Produto", "Status", "Reservado", "Progresso", "Prazo", ""].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {buyerReport.map(item => (
-                    <tr key={item.buyer.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-800">{item.buyer.companyName}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.buyer.contactName}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.buyer.city}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.buyer.whatsapp}</td>
-                      <td className="px-4 py-3">{item.totalReservations}</td>
-                      <td className="px-4 py-3">{item.totalQuantity}</td>
-                      <td className="px-4 py-3 font-semibold text-orange-600">{currency(item.totalValue)}</td>
+                  {recentOffers.map(offer => {
+                    const progress = offerProgress(offer);
+                    const offerRes = myReservations.filter(r => r.offerId === offer.id);
+                    const daysLeft = Math.max(0, Math.ceil((new Date(`${offer.deadline}T23:59:59`).getTime() - Date.now()) / 86400000));
+                    return (
+                      <tr key={offer.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {offer.imageBase64
+                                ? <img src={offer.imageBase64} alt={offer.product} className="w-full h-full object-cover" />
+                                : <Package size={14} className="text-orange-300" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-800 truncate">{offer.product}</p>
+                              <p className="text-[11px] text-gray-400 truncate">{supplier?.companyName} · {offer.category}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3"><span className={statusColors[offer.status] || "badge-rascunho"}>{offer.status.replace(/_/g, " ")}</span></td>
+                        <td className="px-4 py-3 text-gray-700">{currency(offerRes.reduce((a, r) => a + r.totalAmount, 0))}</td>
+                        <td className="px-4 py-3">
+                          <div className="w-24">
+                            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden mb-1">
+                              <div className={`h-full rounded-full ${progress.percent >= 100 ? "bg-green-500" : "bg-orange-500"}`} style={{ width: `${Math.min(progress.percent, 100)}%` }} />
+                            </div>
+                            <span className="text-[11px] text-gray-400">{progress.percent}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{daysLeft} dias</td>
+                        <td className="px-4 py-3 text-right">
+                          <Link to={`/fornecedor/ofertas/${offer.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-400">
+                            <Eye size={14} />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Recent pre-orders — compact table */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-gray-700">Pré-pedidos recentes</h2>
+            <Link to="/fornecedor/pre-pedidos" className="text-xs text-orange-500 font-semibold hover:text-orange-600">
+              Ver todos
+            </Link>
+          </div>
+
+          {recentReservations.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm">
+              Nenhum pré-pedido recebido ainda.
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    {["Empresa", "Produto", "Qtd.", "Valor", "Status", ""].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {recentReservations.map(r => (
+                    <tr key={r.id} className="hover:bg-gray-50/50">
                       <td className="px-4 py-3">
-                        <span className="badge-ativa">{reservationLabel[item.lastStatus] || item.lastStatus}</span>
+                        <p className="font-medium text-gray-800">{r.buyerSnapshot.companyName}</p>
+                        <p className="text-[11px] text-gray-400">{r.buyerSnapshot.city}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
+                      <td className="px-4 py-3 text-gray-600">{r.quantity.toLocaleString("pt-BR")} {r.unit}</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{currency(r.totalAmount)}</td>
+                      <td className="px-4 py-3"><span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span></td>
+                      <td className="px-4 py-3 text-right">
+                        <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-xs font-semibold text-orange-500 hover:text-orange-600">Ver</Link>
                       </td>
                     </tr>
                   ))}
@@ -487,108 +479,127 @@ export function SupplierCreateOfferPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <ProductImageUpload value={productImage} onChange={setProductImage} />
 
-            <div className="card p-6 space-y-5">
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label-base">Produto</label>
-                <input required name="product" placeholder="Ex: Farinha de Trigo 25kg" className="input-base w-full" />
+            {/* Bloco 1 — Produto */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Produto</h2>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label-base">Produto</label>
+                  <input required name="product" placeholder="Ex: Farinha de Trigo 25kg" className="input-base w-full" />
+                </div>
+                <div>
+                  <label className="label-base">Marca</label>
+                  <input required name="brand" placeholder="Ex: Tradição" className="input-base w-full" />
+                </div>
+                <div>
+                  <label className="label-base">Categoria</label>
+                  <select required name="categoryId" className="input-base w-full">
+                    {categories.filter(c => c.active).map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="label-base">Marca</label>
-                <input required name="brand" placeholder="Ex: Tradição" className="input-base w-full" />
-              </div>
-              <div>
-                <label className="label-base">Categoria</label>
-                <select required name="categoryId" className="input-base w-full">
-                  {categories.filter(c => c.active).map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label-base">Unidade de venda</label>
-                <select required name="unit" className="input-base w-full">
-                  {["saco 25kg", "kg", "unidade", "caixa", "pacote", "fardo", "litro", "metro", "tonelada"].map(u => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label-base">Preço normal</label>
-                <input
-                  required name="normalPrice" inputMode="decimal"
-                  placeholder="R$ 0,00" className="input-base w-full"
-                  onChange={e => setNormalPrice(parseDecimal(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="label-base flex items-center gap-1">
-                  Preço Zuppi <Info size={13} className="text-gray-400" />
-                </label>
-                <input required name="zuppiPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full" />
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label-base">Unidade de venda</label>
+                  <select required name="unit" className="input-base w-full">
+                    {["saco 25kg", "kg", "unidade", "caixa", "pacote", "fardo", "litro", "metro", "tonelada"].map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label-base">Compra mínima por comprador</label>
-                <input required name="minimumPurchasePerBuyer" inputMode="decimal" placeholder="Ex: 4" className="input-base w-full" />
-              </div>
-              <div>
-                <label className="label-base">Tipo de meta</label>
-                <select value={targetType} onChange={e => setTargetType(e.target.value as "quantity" | "amount")} className="input-base w-full">
-                  <option value="quantity">Meta por quantidade</option>
-                  <option value="amount">Meta por valor (R$)</option>
-                </select>
-              </div>
-              <div>
-                <label className="label-base">{targetType === "quantity" ? "Meta (quantidade)" : "Meta (R$)"}</label>
-                {targetType === "quantity"
-                  ? <input required name="targetQuantity" inputMode="decimal" placeholder="Ex: 400" className="input-base w-full" />
-                  : <input required name="targetAmount" inputMode="decimal" placeholder="Ex: 50000" className="input-base w-full" />
-                }
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label-base">Quantidade máxima</label>
-                <input name="maxQty" inputMode="decimal" placeholder="Opcional" className="input-base w-full" />
-              </div>
-              <div>
-                <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Região atendida</label>
-                <input required name="region" placeholder="Ex: Curitiba e região" className="input-base w-full" />
-              </div>
-              <div>
-                <label className="label-base flex items-center gap-1.5"><CreditCard size={13} className="text-gray-400" />Condição de pagamento</label>
-                <select required name="paymentTerms" className="input-base w-full">
-                  {["À vista (Pix)", "7 dias", "14 dias", "21 dias", "28 dias", "30 dias", "45 dias", "60 dias"].map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+            {/* Bloco 2 — Preço */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Preço</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label-base">Preço normal</label>
+                  <input
+                    required name="normalPrice" inputMode="decimal"
+                    placeholder="R$ 0,00" className="input-base w-full"
+                    onChange={e => setNormalPrice(parseDecimal(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label className="label-base flex items-center gap-1">
+                    Preço Zuppi <Info size={13} className="text-gray-400" />
+                  </label>
+                  <input required name="zuppiPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full" />
+                </div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label-base flex items-center gap-1.5"><Calendar size={13} className="text-gray-400" />Prazo final da oferta</label>
-                <input required type="date" name="deadline" min={todayInputValue()} max={maxOfferDeadlineInputValue()} className="input-base w-full" />
+            {/* Bloco 3 — Meta */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Meta</h2>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label-base">Tipo de meta</label>
+                  <select value={targetType} onChange={e => setTargetType(e.target.value as "quantity" | "amount")} className="input-base w-full">
+                    <option value="quantity">Meta por quantidade</option>
+                    <option value="amount">Meta por valor (R$)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label-base">{targetType === "quantity" ? "Meta (quantidade)" : "Meta (R$)"}</label>
+                  {targetType === "quantity"
+                    ? <input required name="targetQuantity" inputMode="decimal" placeholder="Ex: 400" className="input-base w-full" />
+                    : <input required name="targetAmount" inputMode="decimal" placeholder="Ex: 50000" className="input-base w-full" />
+                  }
+                </div>
+                <div>
+                  <label className="label-base">Compra mínima por comprador</label>
+                  <input required name="minimumPurchasePerBuyer" inputMode="decimal" placeholder="Ex: 4" className="input-base w-full" />
+                </div>
               </div>
-              <div>
-                <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
-                <select required name="deliveryTime" className="input-base w-full">
-                  {["até 2 dias após fechamento", "até 3 dias após fechamento", "até 5 dias após fechamento", "até 7 dias após fechamento", "até 10 dias após fechamento", "até 15 dias após fechamento"].map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label-base">Quantidade máxima</label>
+                  <input name="maxQty" inputMode="decimal" placeholder="Opcional" className="input-base w-full" />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="label-base">Observações</label>
+            {/* Bloco 4 — Condições */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Condições</h2>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Região atendida</label>
+                  <input required name="region" placeholder="Ex: Curitiba e região" className="input-base w-full" />
+                </div>
+                <div>
+                  <label className="label-base flex items-center gap-1.5"><CreditCard size={13} className="text-gray-400" />Condição de pagamento</label>
+                  <select required name="paymentTerms" className="input-base w-full">
+                    {["À vista (Pix)", "7 dias", "14 dias", "21 dias", "28 dias", "30 dias", "45 dias", "60 dias"].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
+                  <select required name="deliveryTime" className="input-base w-full">
+                    {["até 2 dias após fechamento", "até 3 dias após fechamento", "até 5 dias após fechamento", "até 7 dias após fechamento", "até 10 dias após fechamento", "até 15 dias após fechamento"].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label-base flex items-center gap-1.5"><Calendar size={13} className="text-gray-400" />Prazo final da oferta</label>
+                  <input required type="date" name="deadline" min={todayInputValue()} max={maxOfferDeadlineInputValue()} className="input-base w-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* Bloco 5 — Observações */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Observações</h2>
               <textarea
                 name="notes"
                 placeholder="Ex: Oferta exclusiva para compradores B2B"
@@ -598,10 +609,13 @@ export function SupplierCreateOfferPage() {
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => navigate("/fornecedor")}>
                 Salvar rascunho
               </button>
+              <Link to="/fornecedor/simulador" className="btn-secondary flex-1 justify-center text-center">
+                Simular antes de publicar
+              </Link>
               <button type="submit" className="btn-primary flex-1 justify-center">
                 <ExternalLink size={15} /> Publicar oferta
               </button>
@@ -610,7 +624,6 @@ export function SupplierCreateOfferPage() {
             <p className="text-xs text-gray-400 text-center">
               🔒 Seus dados estão protegidos com criptografia de ponta a ponta.
             </p>
-            </div>
           </form>
 
           <MarketIntelPanel normalPrice={normalPrice} />
@@ -664,9 +677,9 @@ export function SupplierOfferDetailPage() {
 
         <div className="grid sm:grid-cols-4 gap-4">
           <MetricCard title="Meta" value={formatGoal(offer, progress.target)} icon={TrendingUp} />
-          <MetricCard title="Reservado" value={formatGoal(offer, progress.current)} icon={Package} iconBg="bg-green-50" iconColor="text-green-600" />
-          <MetricCard title="Valor reservado" value={currency(totalAmount)} icon={DollarSign} iconBg="bg-blue-50" iconColor="text-blue-600" />
-          <MetricCard title="Disponível" value={`${availability.availablePercent}%`} sub={`${availability.available} ${offer.unit}`} icon={Users} iconBg="bg-amber-50" iconColor="text-amber-600" />
+          <MetricCard title="Reservado" value={formatGoal(offer, progress.current)} icon={Package} />
+          <MetricCard title="Valor reservado" value={currency(totalAmount)} icon={DollarSign} />
+          <MetricCard title="Disponível" value={`${availability.availablePercent}%`} sub={`${availability.available} ${offer.unit}`} icon={Users} />
         </div>
 
         <div className="card p-5">
@@ -769,12 +782,23 @@ export function SupplierPreOrdersPage() {
   const myReservations = reservations.filter(r => myOfferIds.has(r.offerId));
   const filtered = filter === "todos" ? myReservations : myReservations.filter(r => r.status === filter);
 
+  const totalValue = myReservations.reduce((a, r) => a + r.totalAmount, 0);
+  const uniqueBuyers = new Set(myReservations.map(r => r.buyerId)).size;
+  const reachedGoal = myReservations.filter(r => ["meta_atingida", "meta_batida"].includes(r.status)).length;
+
   return (
     <DashboardLayout role="supplier">
-      <div className="space-y-4 max-w-6xl">
+      <div className="space-y-5 max-w-6xl">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Pré-pedidos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Reservas recebidas em todas as suas ofertas.</p>
+          <h1 className="text-xl font-bold text-gray-800">Pré-pedidos</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Reservas recebidas em todas as suas ofertas.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <MetricCard title="Pré-pedidos totais" value={String(myReservations.length)} icon={Package} />
+          <MetricCard title="Valor potencial" value={currency(totalValue)} icon={DollarSign} />
+          <MetricCard title="Compradores interessados" value={String(uniqueBuyers)} icon={Users} />
+          <MetricCard title="Metas atingidas" value={String(reachedGoal)} icon={TrendingUp} />
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -792,40 +816,35 @@ export function SupplierPreOrdersPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="card p-8 text-center text-gray-400">Nenhum pré-pedido encontrado para este filtro.</div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">Nenhum pré-pedido encontrado para este filtro.</div>
         ) : (
-          <div className="card overflow-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
             <table className="w-full min-w-[800px] text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
+              <thead>
+                <tr className="border-b border-gray-50">
                   {["Comprador", "Produto", "Quantidade", "Valor", "Status", "Data", "Ação"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map(r => {
-                  const offer = offers.find(o => o.id === r.offerId);
-                  return (
-                    <tr key={r.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
-                      <td className="px-4 py-3">{r.quantity} {r.unit}</td>
-                      <td className="px-4 py-3 font-semibold text-orange-600">{currency(r.totalAmount)}</td>
-                      <td className="px-4 py-3">
-                        <span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
-                      <td className="px-4 py-3">
-                        {offer && (
-                          <Link to={`/fornecedor/ofertas/${offer.id}`} className="text-orange-600 font-medium hover:underline text-xs">
-                            Ver detalhes
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.map(r => (
+                  <tr key={r.id} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
+                    <td className="px-4 py-3 text-gray-600">{r.product}</td>
+                    <td className="px-4 py-3">{r.quantity} {r.unit}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-700">{currency(r.totalAmount)}</td>
+                    <td className="px-4 py-3">
+                      <span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3">
+                      <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-orange-600 font-medium hover:underline text-xs">
+                        Ver detalhes
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
