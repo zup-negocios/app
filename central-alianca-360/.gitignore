@@ -1,9 +1,0 @@
-.env
-.env.local
-.env.production
-/storage/imports
-/storage/screenshots
-/storage/processed
-node_modules
-.next
-*.tsbuildinfo
