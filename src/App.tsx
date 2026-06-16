@@ -7,8 +7,7 @@ import { InstallBanner } from "./components/InstallBanner";
 import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
 import { BuyerDashboardPage } from "./pages/BuyerDashboardPage";
-import { BuyerOrdersPage } from "./pages/BuyerOrdersPage";
-import { BuyerCompletedPurchasesPage, BuyerParticipatingOffersPage } from "./pages/BuyerReportsPage";
+import { BuyerPurchaseDetailPage, BuyerPurchasesPage } from "./pages/BuyerPurchasesPage";
 import { GestaoPage } from "./pages/GestaoPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -17,7 +16,7 @@ import { OffersPage } from "./pages/OffersPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RatingsPage } from "./pages/RatingsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { SupplierCreateOfferPage, SupplierDashboardPage, SupplierOfferDetailPage } from "./pages/SupplierPages";
+import { SupplierCreateOfferPage, SupplierDashboardPage, SupplierOfferDetailPage, SupplierPreOrdersPage } from "./pages/SupplierPages";
 import { SupplierClientsReportPage, SupplierPurchasesReportPage } from "./pages/SupplierReportsPage";
 import { TutorialPage } from "./pages/TutorialPage";
 import { ViabilitySimulatorPage } from "./pages/ViabilitySimulatorPage";
@@ -43,13 +42,16 @@ export default function App() {
           <Route path="/ofertas" element={<OffersPage />} />
           <Route path="/ofertas/:id" element={<OfferDetailPage />} />
           <Route path="/comprador" element={<BuyerDashboardPage />} />
-          <Route path="/comprador/pedidos" element={<BuyerOrdersPage />} />
-          <Route path="/comprador/ofertas-participando" element={<BuyerParticipatingOffersPage />} />
-          <Route path="/comprador/compras-realizadas" element={<BuyerCompletedPurchasesPage />} />
+          <Route path="/comprador/minhas-compras" element={<BuyerPurchasesPage />} />
+          <Route path="/comprador/minhas-compras/:id" element={<BuyerPurchaseDetailPage />} />
+          <Route path="/comprador/pedidos" element={<Navigate to="/comprador/minhas-compras" replace />} />
+          <Route path="/comprador/ofertas-participando" element={<Navigate to="/comprador/minhas-compras" replace />} />
+          <Route path="/comprador/compras-realizadas" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/fornecedor" element={<SupplierDashboardPage />} />
           <Route path="/fornecedor/criar-oferta" element={<SupplierCreateOfferPage />} />
           <Route path="/fornecedor/ofertas" element={<SupplierDashboardPage />} />
           <Route path="/fornecedor/ofertas/:id" element={<SupplierOfferDetailPage />} />
+          <Route path="/fornecedor/pre-pedidos" element={<SupplierPreOrdersPage />} />
           <Route path="/fornecedor/relatorio-clientes" element={<SupplierClientsReportPage />} />
           <Route path="/fornecedor/relatorio-compras" element={<SupplierPurchasesReportPage />} />
           <Route path="/fornecedor/simulador" element={<ViabilitySimulatorPage />} />

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Package } from "lucide-react";
 import { useAppState } from "../components/AppProvider";
+import { DashboardLayout } from "../components/DashboardLayout";
 import { OfferCountdown } from "../components/OfferCountdown";
 import { ProgressBarMeta } from "../components/ProgressBarMeta";
 import { StarRating } from "../components/StarRating";
@@ -16,20 +18,32 @@ export function OfferDetailPage() {
   const [quantity, setQuantity] = useState(0);
   const [message, setMessage] = useState("");
 
-  if (!offer) return <main className="max-w-4xl mx-auto p-8">Oferta nao encontrada.</main>;
+  if (!offer) {
+    const notFound = <main className="max-w-4xl mx-auto p-8">Oferta nao encontrada.</main>;
+    return session ? <DashboardLayout role={session.role}>{notFound}</DashboardLayout> : notFound;
+  }
 
   const progress = offerProgress(offer);
   const supplierRating = getRatingSummary(offer.supplierId, "supplier");
   const total = quantity * offer.zuppiPrice;
   const economy = quantity * (offer.normalPrice - offer.zuppiPrice);
 
-  return (
-    <main className="max-w-4xl mx-auto p-4 md:p-8 space-y-4">
-      <h1 className="text-3xl font-bold">{offer.product}</h1>
-      <p className="text-gray-600">{offer.brand} - {offer.description}</p>
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <StarRating value={supplierRating.average} />
-        <span>{supplierRating.count ? `${supplierRating.average.toFixed(1)} de reputacao do fornecedor` : "Fornecedor ainda sem avaliacoes"}</span>
+  const content = (
+    <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full sm:w-48 h-48 rounded-2xl bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {offer.imageBase64
+            ? <img src={offer.imageBase64} alt={offer.product} className="w-full h-full object-cover" />
+            : <Package size={48} className="text-orange-300" />}
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold">{offer.product}</h1>
+          <p className="text-gray-600">{offer.brand} - {offer.description}</p>
+          <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+            <StarRating value={supplierRating.average} />
+            <span>{supplierRating.count ? `${supplierRating.average.toFixed(1)} de reputacao do fornecedor` : "Fornecedor ainda sem avaliacoes"}</span>
+          </div>
+        </div>
       </div>
 
       <div className="card p-4 space-y-3">
@@ -67,12 +81,15 @@ export function OfferDetailPage() {
             if (!session || session.role !== "buyer") return navigate("/auth?type=buyer");
             const result = reserve(offer.id, session.id, quantity);
             setMessage(result.message || "");
-            if (result.ok) setTimeout(() => navigate("/comprador/pedidos"), 700);
+            if (result.ok) setTimeout(() => navigate("/comprador/minhas-compras"), 700);
           }}
         >
           Reservar quantidade
         </button>
       </div>
-    </main>
+    </div>
   );
+
+  if (session) return <DashboardLayout role={session.role}>{content}</DashboardLayout>;
+  return <main className="max-w-4xl mx-auto p-4 md:p-8">{content}</main>;
 }

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
 import {
@@ -10,7 +11,7 @@ import {
   TrendingUp, Users, DollarSign, Package, PlusCircle, Eye,
   Edit3, FileText, ChevronRight, Sparkles,
   AlertCircle, Calendar, MapPin, CreditCard, Truck, CheckCircle,
-  Lock, Crown, ExternalLink, Info
+  Lock, Crown, ExternalLink, Info, ImagePlus, X,
 } from "lucide-react";
 
 const reservationLabel: Record<string, string> = {
@@ -111,6 +112,29 @@ export function SupplierDashboardPage() {
           <MetricCard title="Aguardando meta" value={String(waiting)} sub="pré-pedidos" icon={Package} iconBg="bg-amber-50" iconColor="text-amber-600" />
         </div>
 
+        {/* Pending actions */}
+        {(() => {
+          const alerts: string[] = [];
+          const nearGoal = myOffers.find(o => ["ativa", "aberta"].includes(o.status) && offerProgress(o).percent >= 70 && offerProgress(o).percent < 100);
+          if (nearGoal) alerts.push(`A oferta ${nearGoal.product} está com ${offerProgress(nearGoal).percent}% da meta atingida.`);
+          if (waiting > 0) alerts.push(`Você tem ${waiting} pré-pedido(s) aguardando meta.`);
+          const noImageCount = myOffers.filter(o => !o.imageBase64).length;
+          if (noImageCount > 0) alerts.push(`Adicione foto em ${noImageCount} oferta(s) para melhorar a conversão.`);
+          if (supplier?.planoFornecedor !== "assinante") alerts.push("Complete seus dados para liberar recursos do Plano Pro.");
+          if (alerts.length === 0) return null;
+          return (
+            <section className="card p-4 space-y-2">
+              <h2 className="font-bold text-gray-800 text-sm mb-1">Ações pendentes</h2>
+              {alerts.map((text, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-gray-600 bg-amber-50/60 border border-amber-100 rounded-xl px-3 py-2">
+                  <AlertCircle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span>{text}</span>
+                </div>
+              ))}
+            </section>
+          );
+        })()}
+
         {/* My Offers */}
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -138,14 +162,21 @@ export function SupplierDashboardPage() {
               return (
                 <div key={offer.id} className="card p-5 hover:shadow-md transition-shadow">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-gray-800">{offer.product}</h3>
-                        <span className={statusColors[offer.status] || "badge-rascunho"}>
-                          {offer.status.replace(/_/g, " ")}
-                        </span>
+                    <div className="flex-1 min-w-0 flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {offer.imageBase64
+                          ? <img src={offer.imageBase64} alt={offer.product} className="w-full h-full object-cover" />
+                          : <Package size={20} className="text-orange-300" />}
                       </div>
-                      <p className="text-sm text-gray-500 mt-0.5">{offer.brand} · {offer.category}</p>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-gray-800">{offer.product}</h3>
+                          <span className={statusColors[offer.status] || "badge-rascunho"}>
+                            {offer.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-0.5">{offer.brand} · {offer.category}</p>
+                      </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Link className="btn-secondary text-xs py-1.5 px-3" to={`/fornecedor/ofertas/${offer.id}`}>
@@ -340,6 +371,63 @@ function MarketIntelPanel({ normalPrice }: { normalPrice: number }) {
   );
 }
 
+// ─── PRODUCT IMAGE UPLOAD ──────────────────────────────────────────────────────
+
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
+function ProductImageUpload({ value, onChange }: { value: string | null; onChange: (base64: string | null) => void }) {
+  const [error, setError] = useState("");
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setError("Formato não suportado. Use PNG, JPG, JPEG ou WEBP.");
+      return;
+    }
+    setError("");
+    const reader = new FileReader();
+    reader.onload = () => onChange(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="card p-5 space-y-3">
+      <div>
+        <h3 className="font-bold text-gray-800">Foto do produto</h3>
+        <p className="text-sm text-gray-500 mt-1">
+          Adicione uma imagem do produto para aumentar o interesse dos compradores. Ofertas com foto tendem a gerar mais cliques e reservas.
+        </p>
+      </div>
+
+      {value ? (
+        <div className="relative w-full h-44 rounded-xl overflow-hidden border border-gray-100">
+          <img src={value} alt="Preview do produto" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center"
+          >
+            <X size={14} className="text-gray-600" />
+          </button>
+          <label className="absolute bottom-2 right-2 bg-white/90 hover:bg-white shadow text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-lg cursor-pointer">
+            Trocar imagem
+            <input type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
+          </label>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center gap-2 w-full h-44 rounded-xl border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors cursor-pointer">
+          <ImagePlus size={28} className="text-gray-300" />
+          <span className="text-sm font-medium text-gray-500">Clique para enviar uma imagem</span>
+          <span className="text-xs text-gray-400">PNG, JPG, JPEG ou WEBP</span>
+          <input type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
+        </label>
+      )}
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
 // ─── CREATE OFFER ─────────────────────────────────────────────────────────────
 
 export function SupplierCreateOfferPage() {
@@ -347,6 +435,7 @@ export function SupplierCreateOfferPage() {
   const navigate = useNavigate();
   const [targetType, setTargetType] = useState<"quantity" | "amount">("quantity");
   const [normalPrice, setNormalPrice] = useState(0);
+  const [productImage, setProductImage] = useState<string | null>(null);
 
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
@@ -379,7 +468,9 @@ export function SupplierCreateOfferPage() {
       paymentTerms: String(data.get("paymentTerms")),
       deliveryTime: String(data.get("deliveryTime")),
       notes: String(data.get("notes")),
+      imageBase64: productImage || undefined,
     });
+    toast.success("Oferta cadastrada com sucesso.");
     navigate("/fornecedor");
   };
 
@@ -393,7 +484,10 @@ export function SupplierCreateOfferPage() {
 
         <div className="grid lg:grid-cols-[1fr_330px] gap-6 items-start">
           {/* Form */}
-          <form onSubmit={handleSubmit} className="card p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <ProductImageUpload value={productImage} onChange={setProductImage} />
+
+            <div className="card p-6 space-y-5">
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <label className="label-base">Produto</label>
@@ -516,6 +610,7 @@ export function SupplierCreateOfferPage() {
             <p className="text-xs text-gray-400 text-center">
               🔒 Seus dados estão protegidos com criptografia de ponta a ponta.
             </p>
+            </div>
           </form>
 
           <MarketIntelPanel normalPrice={normalPrice} />
@@ -648,6 +743,93 @@ export function SupplierOfferDetailPage() {
             </div>
           )}
         </section>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+// ─── PRE-ORDERS (PRÉ-PEDIDOS) ─────────────────────────────────────────────────
+
+const preOrderFilters = [
+  { id: "todos", label: "Todos" },
+  { id: "aguardando_meta", label: "Aguardando meta" },
+  { id: "meta_atingida", label: "Meta atingida" },
+  { id: "confirmado", label: "Confirmado" },
+  { id: "cancelado", label: "Cancelado" },
+  { id: "entregue", label: "Concluído" },
+];
+
+export function SupplierPreOrdersPage() {
+  const { session, offers, reservations } = useAppState();
+  const [filter, setFilter] = useState("todos");
+
+  if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
+
+  const myOfferIds = new Set(offers.filter(o => o.supplierId === session.id).map(o => o.id));
+  const myReservations = reservations.filter(r => myOfferIds.has(r.offerId));
+  const filtered = filter === "todos" ? myReservations : myReservations.filter(r => r.status === filter);
+
+  return (
+    <DashboardLayout role="supplier">
+      <div className="space-y-4 max-w-6xl">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Pré-pedidos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Reservas recebidas em todas as suas ofertas.</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {preOrderFilters.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
+                filter === f.id ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200 hover:border-orange-200"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="card p-8 text-center text-gray-400">Nenhum pré-pedido encontrado para este filtro.</div>
+        ) : (
+          <div className="card overflow-auto">
+            <table className="w-full min-w-[800px] text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["Comprador", "Produto", "Quantidade", "Valor", "Status", "Data", "Ação"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(r => {
+                  const offer = offers.find(o => o.id === r.offerId);
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
+                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
+                      <td className="px-4 py-3">{r.quantity} {r.unit}</td>
+                      <td className="px-4 py-3 font-semibold text-orange-600">{currency(r.totalAmount)}</td>
+                      <td className="px-4 py-3">
+                        <span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
+                      <td className="px-4 py-3">
+                        {offer && (
+                          <Link to={`/fornecedor/ofertas/${offer.id}`} className="text-orange-600 font-medium hover:underline text-xs">
+                            Ver detalhes
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

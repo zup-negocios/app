@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAppState } from "../components/AppProvider";
 import {
   Package, Users, Target, Trophy, TrendingDown, Shield, Clock, Store,
@@ -86,8 +86,10 @@ const PLANS = [
 ];
 
 export function HomePage() {
-  const { offers, categories } = useAppState();
+  const { offers, categories, session } = useAppState();
   const highlighted = offers.filter(o => o.approved && ["ativa", "aberta", "meta_atingida"].includes(o.status)).slice(0, 3);
+
+  if (session) return <Navigate to={session.role === "buyer" ? "/comprador" : "/fornecedor"} replace />;
 
   return (
     <div className="bg-white">

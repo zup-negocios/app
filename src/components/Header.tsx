@@ -19,7 +19,7 @@ export function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const dashboardPath = session?.role === "buyer" ? "/comprador" : "/fornecedor";
-  const isInsideDashboard = pathname.startsWith("/comprador") || pathname.startsWith("/fornecedor") || pathname.startsWith("/admin");
+  const isInsideDashboard = pathname.startsWith("/comprador") || pathname.startsWith("/fornecedor") || pathname.startsWith("/admin") || (!!session && pathname.startsWith("/ofertas"));
 
   const currentUser = session
     ? session.role === "buyer"

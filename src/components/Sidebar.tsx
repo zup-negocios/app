@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Tag, Package, ShoppingCart, BarChart2, Sparkles,
-  Settings, Star, PlusCircle, Sliders, Crown, Headphones,
+  LayoutDashboard, Tag, Package, ShoppingCart, BarChart2,
+  Settings, PlusCircle, Sliders, Crown, Headphones,
   ChevronRight, Users, Shield
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
@@ -18,21 +18,17 @@ interface NavItem {
 const buyerNav: NavItem[] = [
   { to: "/comprador", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/ofertas", label: "Ofertas abertas", icon: Tag },
-  { to: "/comprador/ofertas-participando", label: "Participando", icon: ShoppingCart },
-  { to: "/comprador/pedidos", label: "Meus pedidos", icon: Package },
-  { to: "/comprador/compras-realizadas", label: "Compras realizadas", icon: BarChart2 },
-  { to: "/avaliacoes", label: "Avaliações", icon: Star },
+  { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 const supplierNav: NavItem[] = [
   { to: "/fornecedor", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/ofertas", label: "Ofertas", icon: Tag },
-  { to: "/fornecedor/criar-oferta", label: "Nova oferta", icon: PlusCircle },
-  { to: "/comprador/pedidos", label: "Pré-pedidos", icon: ShoppingCart },
-  { to: "/fornecedor/relatorio-clientes", label: "Relatórios", icon: BarChart2 },
+  { to: "/fornecedor/ofertas", label: "Minhas ofertas", icon: Package },
+  { to: "/fornecedor/criar-oferta", label: "Criar oferta", icon: PlusCircle },
+  { to: "/fornecedor/pre-pedidos", label: "Pré-pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
-  { to: "/dados-cadastrais", label: "IA de Mercado", icon: Sparkles },
+  { to: "/fornecedor/relatorio-clientes", label: "Relatórios", icon: BarChart2 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

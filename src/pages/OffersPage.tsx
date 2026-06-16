@@ -1,13 +1,14 @@
 ﻿import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CardOferta } from "../components/CardOferta";
+import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
 import { percent } from "../utils/business";
 
 type SortMode = "progresso" | "prazo" | "desconto";
 
 export function OffersPage() {
-  const { offers, categories } = useAppState();
+  const { offers, categories, session } = useAppState();
   const [params] = useSearchParams();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(params.get("cat") || "todas");
@@ -37,8 +38,8 @@ export function OffersPage() {
     });
   }, [offers, query, category, sortBy]);
 
-  return (
-    <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+  const content = (
+    <div className="max-w-7xl mx-auto space-y-4">
       <section className="card p-4">
         <h1 className="text-3xl font-bold">Ofertas abertas</h1>
         <p className="text-gray-600 mt-1">Encontre oportunidades por categoria, progresso e melhor desconto.</p>
@@ -73,6 +74,12 @@ export function OffersPage() {
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         {list.map((offer) => <CardOferta key={offer.id} offer={offer} />)}
       </div>
-    </main>
+    </div>
   );
+
+  if (session) {
+    return <DashboardLayout role={session.role}>{content}</DashboardLayout>;
+  }
+
+  return <main className="max-w-7xl mx-auto px-4 py-6">{content}</main>;
 }

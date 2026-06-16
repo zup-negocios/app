@@ -14,9 +14,11 @@ export function CardOferta({ offer }: { offer: Offer }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
       <div className="flex gap-4 p-4">
-        {/* image placeholder */}
-        <div className="w-20 h-20 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-          <Package size={32} className="text-orange-300" />
+        {/* image */}
+        <div className="w-20 h-20 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {offer.imageBase64
+            ? <img src={offer.imageBase64} alt={offer.product} className="w-full h-full object-cover" />
+            : <Package size={32} className="text-orange-300" />}
         </div>
 
         <div className="flex-1 min-w-0">
