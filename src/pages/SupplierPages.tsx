@@ -705,10 +705,19 @@ export function SupplierCreateOfferPage() {
                 <div>
                   <label className="label-base flex items-center gap-1.5"><CreditCard size={13} className="text-gray-400" />Condição de pagamento</label>
                   <select required name="paymentTerms" className="input-base w-full">
-                    {["À vista (Pix)", "7 dias", "14 dias", "21 dias", "28 dias", "30 dias", "45 dias", "60 dias"].map(p => (
+                    {[
+                      "Pix direto com o fornecedor",
+                      "Dinheiro na retirada",
+                      "Cartão de débito direto com o fornecedor",
+                      "Cartão de crédito direto com o fornecedor",
+                      "Boleto emitido pelo fornecedor",
+                      "Faturado para CNPJ aprovado",
+                      "A combinar diretamente com o fornecedor",
+                    ].map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
+                  <p className="text-[11px] text-gray-400 leading-relaxed mt-1">A Zuppi atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
                 </div>
                 <div>
                   <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
@@ -896,178 +905,427 @@ export function SupplierOfferDetailPage() {
   );
 }
 
-// ─── PRE-ORDERS (PRÉ-PEDIDOS) ─────────────────────────────────────────────────
+// ─── PEDIDOS (ex-Pré-pedidos) ─────────────────────────────────────────────────
 
-type PreOrderTab = "todas" | "market" | "coletivas";
+type PreOrderTab = "todas" | "market" | "coletivas" | "em_negociacao" | "concluidos" | "nao_cumpriu" | "cancelados";
 
-const marketStatusLabel: Record<string, string> = {
+const ALL_STATUS_LABELS: Record<string, string> = {
   ordem_gerada: "Ordem gerada",
-  fornecedor_notificado: "Notificado",
+  fornecedor_notificado: "Fornecedor notificado",
   em_tratativa_com_fornecedor: "Em negociação",
-  venda_concluida: "Concluída",
-  cliente_nao_cumpriu: "Não cumpriu",
+  venda_concluida: "Venda concluída",
+  cliente_nao_cumpriu: "Cliente não cumpriu",
   cancelada: "Cancelada",
-};
-
-const collectiveStatusLabel: Record<string, string> = {
+  cancelado: "Cancelada",
   aguardando_meta: "Aguardando meta",
   intencao_registrada: "Intenção registrada",
   faixa_atingida: "Faixa atingida",
   meta_atingida: "Meta atingida",
-  ordem_gerada: "Ordem gerada",
-  em_tratativa_com_fornecedor: "Em negociação",
-  venda_concluida: "Concluída",
-  cliente_nao_cumpriu: "Não cumpriu",
-  cancelado: "Cancelada",
+  prazo_finalizado: "Prazo finalizado",
   confirmado: "Confirmado",
   entregue: "Concluído",
 };
 
+const STATUS_BADGE: Record<string, string> = {
+  ordem_gerada: "badge-ativa",
+  em_tratativa_com_fornecedor: "badge-ativa",
+  venda_concluida: "badge-meta_atingida",
+  cliente_nao_cumpriu: "badge-cancelada",
+  cancelada: "badge-cancelada",
+  cancelado: "badge-cancelada",
+  aguardando_meta: "badge-aguardando_aprovacao",
+  intencao_registrada: "badge-aguardando_aprovacao",
+  faixa_atingida: "badge-ativa",
+  meta_atingida: "badge-meta_atingida",
+};
+
+function whatsappLink(phone: string, supplierName: string, product: string, qty: number, unit: string) {
+  const cleaned = phone.replace(/\D/g, "");
+  const number = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
+  const msg = encodeURIComponent(`Olá, aqui é da ${supplierName}. Recebemos sua ordem pela Zuppi referente ao produto ${product}, quantidade ${qty} ${unit}. Vamos seguir com a finalização da compra?`);
+  return `https://wa.me/${number}?text=${msg}`;
+}
+
+// ─── CLIENT MODAL ───────────────────────────────────────────────────────────
+
+interface ClientModalProps {
+  buyer: { companyName: string; cnpj?: string; contactName: string; whatsapp: string; email: string; city: string; segment?: string; neighborhood?: string; cpf?: string; rating?: number; fulfilledPurchases?: number; brokenIntentions?: number; buyerType?: string };
+  order: { product: string; purchaseMode?: string; quantity: number; unit: string; unitPrice: number; totalAmount: number; status: string; createdAt: string };
+  supplierName: string;
+  onClose: () => void;
+}
+
+function ClientModal({ buyer, order, supplierName, onClose }: ClientModalProps) {
+  const isB2C = buyer.buyerType === "b2c";
+  const hasWhatsApp = !!buyer.whatsapp?.trim();
+  const link = hasWhatsApp ? whatsappLink(buyer.whatsapp, supplierName, order.product, order.quantity, order.unit) : "";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-800">Dados do cliente</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+            <X size={16} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6 space-y-5">
+          {/* Buyer data */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isB2C ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                {isB2C ? "B2C — Pessoa Física" : "B2B — Pessoa Jurídica"}
+              </span>
+              {buyer.rating !== undefined && (
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${buyer.rating >= 80 ? "bg-green-100 text-green-700" : buyer.rating >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-600"}`}>
+                  Pontuação: {buyer.rating}/100
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-xs text-gray-400">Nome/Razão Social</p><p className="font-semibold text-gray-800">{buyer.companyName}</p></div>
+              {!isB2C && buyer.cnpj && <div><p className="text-xs text-gray-400">CNPJ</p><p className="font-medium text-gray-700">{buyer.cnpj}</p></div>}
+              {isB2C && buyer.cpf && <div><p className="text-xs text-gray-400">CPF</p><p className="font-medium text-gray-700">{buyer.cpf}</p></div>}
+              <div><p className="text-xs text-gray-400">Responsável</p><p className="font-medium text-gray-700">{buyer.contactName}</p></div>
+              <div><p className="text-xs text-gray-400">E-mail</p><p className="font-medium text-gray-700 truncate">{buyer.email}</p></div>
+              <div><p className="text-xs text-gray-400">Cidade</p><p className="font-medium text-gray-700">{buyer.city}{buyer.neighborhood ? ` · ${buyer.neighborhood}` : ""}</p></div>
+              {!isB2C && buyer.segment && <div><p className="text-xs text-gray-400">Segmento</p><p className="font-medium text-gray-700 capitalize">{buyer.segment}</p></div>}
+              {buyer.fulfilledPurchases !== undefined && (
+                <div><p className="text-xs text-gray-400">Compras cumpridas</p><p className="font-medium text-green-600">{buyer.fulfilledPurchases}</p></div>
+              )}
+              {buyer.brokenIntentions !== undefined && buyer.brokenIntentions > 0 && (
+                <div><p className="text-xs text-gray-400">Não cumpriu</p><p className="font-medium text-red-500">{buyer.brokenIntentions}x</p></div>
+              )}
+            </div>
+          </div>
+
+          {/* WhatsApp */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs text-gray-400 mb-2">WhatsApp</p>
+            {hasWhatsApp ? (
+              <div className="flex items-center gap-3">
+                <p className="font-semibold text-gray-700">{buyer.whatsapp}</p>
+                <a href={link} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors">
+                  <ExternalLink size={14} /> Chamar no WhatsApp
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">Cliente sem WhatsApp cadastrado.</p>
+            )}
+          </div>
+
+          {/* Order summary */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resumo do pedido</p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-xs text-gray-400">Produto</p><p className="font-semibold text-gray-800">{order.product}</p></div>
+              <div><p className="text-xs text-gray-400">Tipo</p><p className="font-medium text-gray-700">{order.purchaseMode === "market" ? "⚡ Market Zuppi" : "👥 Compra coletiva"}</p></div>
+              <div><p className="text-xs text-gray-400">Quantidade</p><p className="font-medium text-gray-700">{order.quantity.toLocaleString("pt-BR")} {order.unit}</p></div>
+              <div><p className="text-xs text-gray-400">Preço unit.</p><p className="font-medium text-gray-700">{currency(order.unitPrice)}</p></div>
+              <div><p className="text-xs text-gray-400">Valor total</p><p className="font-bold text-orange-600">{currency(order.totalAmount)}</p></div>
+              <div><p className="text-xs text-gray-400">Status</p><span className={`${STATUS_BADGE[order.status] || "badge-aguardando_aprovacao"} text-xs`}>{ALL_STATUS_LABELS[order.status] || order.status}</span></div>
+              <div><p className="text-xs text-gray-400">Data</p><p className="font-medium text-gray-700">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT STATUS MODAL ──────────────────────────────────────────────────────
+
+const EDITABLE_MARKET_STATUSES: { value: string; label: string }[] = [
+  { value: "em_tratativa_com_fornecedor", label: "Em negociação" },
+  { value: "venda_concluida", label: "Venda concluída" },
+  { value: "cliente_nao_cumpriu", label: "Cliente não cumpriu" },
+  { value: "cancelada", label: "Cancelada" },
+];
+
+const EDITABLE_COLLECTIVE_STATUSES: { value: string; label: string }[] = [
+  { value: "em_tratativa_com_fornecedor", label: "Em negociação" },
+  { value: "venda_concluida", label: "Venda concluída" },
+  { value: "cliente_nao_cumpriu", label: "Cliente não cumpriu" },
+  { value: "cancelado", label: "Cancelada" },
+];
+
+interface EditStatusModalProps {
+  currentStatus: string;
+  isMarket: boolean;
+  onSave: (status: string, note: string) => void;
+  onClose: () => void;
+}
+
+function EditStatusModal({ currentStatus, isMarket, onSave, onClose }: EditStatusModalProps) {
+  const [newStatus, setNewStatus] = useState(currentStatus);
+  const [note, setNote] = useState("");
+  const options = isMarket ? EDITABLE_MARKET_STATUSES : EDITABLE_COLLECTIVE_STATUSES;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-800">Editar status</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+            <X size={16} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <p className="text-xs text-gray-400 mb-1">Status atual</p>
+            <span className={`${STATUS_BADGE[currentStatus] || "badge-aguardando_aprovacao"} text-xs`}>{ALL_STATUS_LABELS[currentStatus] || currentStatus}</span>
+          </div>
+          <div>
+            <label className="label-base">Novo status</label>
+            <select value={newStatus} onChange={e => setNewStatus(e.target.value)} className="input-base w-full">
+              {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label-base">Observação (opcional)</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="input-base w-full resize-none" placeholder="Ex: Entrei em contato pelo WhatsApp..." />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={onClose} className="btn-secondary flex-1 justify-center">Cancelar</button>
+            <button onClick={() => onSave(newStatus, note)} className="btn-primary flex-1 justify-center">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Unified row type for the orders table
+type OrderRow =
+  | { kind: "market"; id: string; buyerId: string; buyerType?: string; buyerSnapshot: { companyName: string; cnpj?: string; contactName: string; whatsapp: string; email: string; city: string; segment?: string }; product: string; quantity: number; unit: string; unitPrice: number; totalAmount: number; status: string; createdAt: string }
+  | { kind: "collective"; id: string; buyerId: string; buyerType?: string; buyerSnapshot: { companyName: string; cnpj?: string; contactName: string; whatsapp: string; email: string; city: string; segment?: string }; product: string; quantity: number; unit: string; unitPrice: number; totalAmount: number; status: string; createdAt: string };
+
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function getMonthOptions() {
+  const now = new Date();
+  const opts: { value: string; label: string }[] = [{ value: "all", label: "Todos os meses" }];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    opts.push({ value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: `${MONTHS[d.getMonth()]} ${d.getFullYear()}` });
+  }
+  return opts;
+}
+
+function matchesMonth(dateStr: string, monthFilter: string) {
+  if (monthFilter === "all") return true;
+  return dateStr.startsWith(monthFilter);
+}
+
 export function SupplierPreOrdersPage() {
-  const { session, offers, reservations, marketOrders, updateMarketOrderStatus, updateReservationStatus, updateBuyerScore } = useAppState();
+  const { session, offers, reservations, marketOrders, updateMarketOrderStatus, updateReservationStatus, updateBuyerScore, buyers } = useAppState();
   const [tab, setTab] = useState<PreOrderTab>("todas");
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [clientModal, setClientModal] = useState<OrderRow | null>(null);
+  const [editStatusRow, setEditStatusRow] = useState<OrderRow | null>(null);
 
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
+
+  const supplierProfile = session as { companyName?: string };
+  const supplierName = supplierProfile.companyName || "Fornecedor";
 
   const myOfferIds = new Set(offers.filter(o => o.supplierId === session.id).map(o => o.id));
   const myReservations = reservations.filter(r => myOfferIds.has(r.offerId) && r.purchaseMode !== "market");
   const myMarketOrders = marketOrders.filter(o => myOfferIds.has(o.offerId));
 
-  const totalCollective = myReservations.reduce((a, r) => a + r.totalAmount, 0);
-  const totalMarket = myMarketOrders.reduce((a, o) => a + o.totalAmount, 0);
-  const uniqueBuyers = new Set([...myReservations.map(r => r.buyerId), ...myMarketOrders.map(o => o.buyerId)]).size;
-  const pendingMarket = myMarketOrders.filter(o => ["ordem_gerada", "fornecedor_notificado"].includes(o.status)).length;
+  // Build unified rows for display
+  const allRows: OrderRow[] = [
+    ...myMarketOrders.map(o => ({
+      kind: "market" as const, id: o.id, buyerId: o.buyerId, buyerType: o.buyerType,
+      buyerSnapshot: o.buyerSnapshot as OrderRow["buyerSnapshot"],
+      product: o.product, quantity: o.quantity, unit: o.unit, unitPrice: o.unitPrice, totalAmount: o.totalAmount,
+      status: o.status, createdAt: o.createdAt,
+    })),
+    ...myReservations.map(r => ({
+      kind: "collective" as const, id: r.id, buyerId: r.buyerId, buyerType: r.buyerType,
+      buyerSnapshot: r.buyerSnapshot as OrderRow["buyerSnapshot"],
+      product: r.product, quantity: r.quantity, unit: r.unit,
+      unitPrice: r.finalPrice ?? (r.quantity > 0 ? r.totalAmount / r.quantity : 0),
+      totalAmount: r.totalAmount, status: r.status, createdAt: r.createdAt,
+    })),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  const handleMarketAction = (orderId: string, buyerId: string, action: "concluir" | "nao_cumpriu" | "cancelar" | "negociar") => {
-    if (action === "concluir") { updateMarketOrderStatus(orderId, "venda_concluida"); updateBuyerScore(buyerId, true); }
-    else if (action === "nao_cumpriu") { updateMarketOrderStatus(orderId, "cliente_nao_cumpriu"); updateBuyerScore(buyerId, false); }
-    else if (action === "cancelar") updateMarketOrderStatus(orderId, "cancelada");
-    else updateMarketOrderStatus(orderId, "em_tratativa_com_fornecedor");
+  const monthOptions = getMonthOptions();
+  const filteredByMonth = allRows.filter(r => matchesMonth(r.createdAt, monthFilter));
+
+  function applyTabFilter(rows: typeof allRows): typeof allRows {
+    switch (tab) {
+      case "market": return rows.filter(r => r.kind === "market");
+      case "coletivas": return rows.filter(r => r.kind === "collective");
+      case "em_negociacao": return rows.filter(r => r.status === "em_tratativa_com_fornecedor");
+      case "concluidos": return rows.filter(r => ["venda_concluida", "confirmado", "entregue"].includes(r.status));
+      case "nao_cumpriu": return rows.filter(r => r.status === "cliente_nao_cumpriu");
+      case "cancelados": return rows.filter(r => ["cancelada", "cancelado"].includes(r.status));
+      default: return rows;
+    }
+  }
+
+  const visibleRows = applyTabFilter(filteredByMonth);
+
+  // KPIs for month
+  const monthRows = filteredByMonth;
+  const concludedRows = monthRows.filter(r => ["venda_concluida", "confirmado", "entregue"].includes(r.status));
+  const notFulfilledRows = monthRows.filter(r => r.status === "cliente_nao_cumpriu");
+  const potentialValue = monthRows.reduce((a, r) => a + r.totalAmount, 0);
+  const concludedValue = concludedRows.reduce((a, r) => a + r.totalAmount, 0);
+
+  const handleSaveStatus = (row: OrderRow, newStatus: string) => {
+    if (row.kind === "market") {
+      updateMarketOrderStatus(row.id, newStatus as Parameters<typeof updateMarketOrderStatus>[1]);
+      if (newStatus === "venda_concluida") updateBuyerScore(row.buyerId, true);
+      else if (newStatus === "cliente_nao_cumpriu") updateBuyerScore(row.buyerId, false);
+    } else {
+      updateReservationStatus(row.id, newStatus as Parameters<typeof updateReservationStatus>[1]);
+      if (newStatus === "venda_concluida") updateBuyerScore(row.buyerId, true);
+      else if (newStatus === "cliente_nao_cumpriu") updateBuyerScore(row.buyerId, false);
+    }
+    setEditStatusRow(null);
   };
 
-  const handleCollectiveAction = (resId: string, buyerId: string, action: "concluir" | "nao_cumpriu" | "cancelar" | "negociar") => {
-    if (action === "concluir") { updateReservationStatus(resId, "venda_concluida"); updateBuyerScore(buyerId, true); }
-    else if (action === "nao_cumpriu") { updateReservationStatus(resId, "cliente_nao_cumpriu"); updateBuyerScore(buyerId, false); }
-    else if (action === "cancelar") updateReservationStatus(resId, "cancelado");
-    else updateReservationStatus(resId, "em_tratativa_com_fornecedor");
-  };
+  function getBuyerForModal(row: OrderRow) {
+    const buyerProfile = buyers?.find((b) => b.id === row.buyerId);
+    return {
+      companyName: row.buyerSnapshot.companyName,
+      cnpj: row.buyerSnapshot.cnpj,
+      contactName: row.buyerSnapshot.contactName,
+      whatsapp: row.buyerSnapshot.whatsapp,
+      email: row.buyerSnapshot.email,
+      city: row.buyerSnapshot.city,
+      segment: row.buyerSnapshot.segment,
+      neighborhood: buyerProfile?.neighborhood,
+      cpf: buyerProfile?.cpf,
+      rating: buyerProfile?.rating,
+      fulfilledPurchases: buyerProfile?.fulfilledPurchases,
+      brokenIntentions: buyerProfile?.brokenIntentions,
+      buyerType: row.buyerType,
+    };
+  }
+
+  const TABS: { value: PreOrderTab; label: string }[] = [
+    { value: "todas", label: "Todas" },
+    { value: "market", label: "⚡ Market" },
+    { value: "coletivas", label: "👥 Coletivas" },
+    { value: "em_negociacao", label: "Em negociação" },
+    { value: "concluidos", label: "Concluídas" },
+    { value: "nao_cumpriu", label: "Não cumpriu" },
+    { value: "cancelados", label: "Canceladas" },
+  ];
 
   return (
     <DashboardLayout role="supplier">
       <div className="space-y-5 max-w-6xl pb-24 md:pb-0">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">Ordens e intenções</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Market Zuppi e compras coletivas em andamento.</p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">Pedidos</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Ordens Market Zuppi e intenções coletivas.</p>
+          </div>
+          <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="input-base w-44 text-sm">
+            {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         </div>
 
+        {/* KPI cards */}
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <MetricCard title="Market Zuppi" value={String(myMarketOrders.length)} sub={`${pendingMarket} aguardando · ${currency(totalMarket)}`} icon={DollarSign} />
-          <MetricCard title="Intenções coletivas" value={String(myReservations.length)} sub={currency(totalCollective)} icon={Package} />
-          <MetricCard title="Compradores únicos" value={String(uniqueBuyers)} icon={Users} />
-          <MetricCard title="Valor total" value={currency(totalCollective + totalMarket)} sub="potencial" icon={TrendingUp} />
+          <MetricCard title="Pedidos no mês" value={String(monthRows.length)} sub={`${monthRows.filter(r => r.kind === "market").length} Market · ${monthRows.filter(r => r.kind === "collective").length} Coletivas`} icon={Package} />
+          <MetricCard title="Valor potencial" value={currency(potentialValue)} sub="todas as ordens do mês" icon={TrendingUp} />
+          <MetricCard title="Vendas concluídas" value={String(concludedRows.length)} sub={currency(concludedValue)} icon={CheckCircle} />
+          <MetricCard title="Clientes não cumpriram" value={String(notFulfilledRows.length)} sub={notFulfilledRows.length > 0 ? "Atenção ao perfil dos clientes" : "Sem ocorrências"} icon={AlertCircle} />
         </div>
 
-        <div className="flex gap-2">
-          {(["todas", "market", "coletivas"] as PreOrderTab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium border transition-colors ${tab === t ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200"}`}>
-              {t === "todas" ? "Todas" : t === "market" ? "⚡ Market" : "👥 Coletivas"}
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {TABS.map(t => (
+            <button key={t.value} onClick={() => setTab(t.value)}
+              className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${tab === t.value ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}>
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Market orders table */}
-        {(tab === "todas" || tab === "market") && myMarketOrders.length > 0 && (
-          <section>
-            <h2 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">⚡ Market Zuppi <span className="text-xs font-normal text-gray-400">— Ordens de compra imediata</span></h2>
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50">
-                    {["Comprador", "Tipo", "Produto", "Qtd.", "Valor", "Status", "Data", "Ações"].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {myMarketOrders.map(o => (
-                    <tr key={o.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-medium text-gray-800">{o.buyerSnapshot.companyName}</td>
-                      <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${o.buyerType === "b2c" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{o.buyerType === "b2c" ? "B2C" : "B2B"}</span></td>
-                      <td className="px-4 py-3 text-gray-600">{o.product}</td>
-                      <td className="px-4 py-3">{o.quantity} {o.unit}</td>
-                      <td className="px-4 py-3 font-semibold text-orange-600">{currency(o.totalAmount)}</td>
-                      <td className="px-4 py-3"><span className="badge-ativa text-xs">{marketStatusLabel[o.status] || o.status}</span></td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</td>
-                      <td className="px-4 py-3">
-                        {!["venda_concluida", "cliente_nao_cumpriu", "cancelada"].includes(o.status) && (
-                          <div className="flex gap-1 flex-wrap">
-                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "negociar")} className="text-[10px] border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">Em negociação</button>
-                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "concluir")} className="text-[10px] border border-green-200 text-green-700 rounded-lg px-2 py-1 hover:bg-green-50">Concluir</button>
-                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "nao_cumpriu")} className="text-[10px] border border-red-200 text-red-600 rounded-lg px-2 py-1 hover:bg-red-50">Não cumpriu</button>
-                          </div>
-                        )}
-                        {["venda_concluida"].includes(o.status) && <span className="text-xs text-green-600 font-semibold">✓ Concluída</span>}
-                        {["cliente_nao_cumpriu", "cancelada"].includes(o.status) && <span className="text-xs text-red-500">✗ Encerrada</span>}
-                      </td>
-                    </tr>
+        {/* Orders table */}
+        {visibleRows.length > 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="border-b border-gray-50">
+                  {["Tipo", "Comprador", "Produto", "Qtd.", "Valor", "Status", "Data", "Ações"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* Collective intents table */}
-        {(tab === "todas" || tab === "coletivas") && myReservations.length > 0 && (
-          <section>
-            <h2 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">👥 Intenções coletivas <span className="text-xs font-normal text-gray-400">— Aguardando meta ou prazo</span></h2>
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50">
-                    {["Comprador", "Tipo", "Produto", "Qtd.", "Valor est.", "Status", "Data", "Ações"].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                    ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {visibleRows.map(row => (
+                  <tr key={`${row.kind}-${row.id}`} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${row.kind === "market" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-600"}`}>
+                          {row.kind === "market" ? "⚡ Market" : "👥 Coletiva"}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${row.buyerType === "b2c" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"}`}>
+                          {row.buyerType === "b2c" ? "B2C" : "B2B"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => setClientModal(row)} className="font-medium text-gray-800 hover:text-orange-600 text-left transition-colors">
+                        {row.buyerSnapshot.companyName}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{row.product}</td>
+                    <td className="px-4 py-3 text-gray-700">{row.quantity.toLocaleString("pt-BR")} {row.unit}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-800">{currency(row.totalAmount)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`${STATUS_BADGE[row.status] || "badge-aguardando_aprovacao"} text-xs`}>
+                        {ALL_STATUS_LABELS[row.status] || row.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{new Date(row.createdAt).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1.5 flex-wrap">
+                        <button onClick={() => setClientModal(row)} className="text-[10px] border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50 text-gray-600">Ver cliente</button>
+                        <button onClick={() => setEditStatusRow(row)} className="text-[10px] border border-orange-200 text-orange-600 rounded-lg px-2 py-1 hover:bg-orange-50">Editar status</button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {myReservations.map(r => (
-                    <tr key={r.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
-                      <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.buyerType === "b2c" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{r.buyerType === "b2c" ? "B2C" : "B2B"}</span></td>
-                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
-                      <td className="px-4 py-3">{r.quantity} {r.unit}</td>
-                      <td className="px-4 py-3 font-semibold text-blue-600">{currency(r.totalAmount)}</td>
-                      <td className="px-4 py-3"><span className="badge-aguardando_aprovacao text-xs">{collectiveStatusLabel[r.status] || r.status}</span></td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
-                      <td className="px-4 py-3">
-                        {["ordem_gerada", "em_tratativa_com_fornecedor"].includes(r.status) && (
-                          <div className="flex gap-1 flex-wrap">
-                            <button onClick={() => handleCollectiveAction(r.id, r.buyerId, "concluir")} className="text-[10px] border border-green-200 text-green-700 rounded-lg px-2 py-1 hover:bg-green-50">Concluir</button>
-                            <button onClick={() => handleCollectiveAction(r.id, r.buyerId, "nao_cumpriu")} className="text-[10px] border border-red-200 text-red-600 rounded-lg px-2 py-1 hover:bg-red-50">Não cumpriu</button>
-                          </div>
-                        )}
-                        {["venda_concluida", "confirmado", "entregue"].includes(r.status) && <span className="text-xs text-green-600 font-semibold">✓ Concluída</span>}
-                        {["cliente_nao_cumpriu", "cancelado"].includes(r.status) && <span className="text-xs text-red-500">✗ Encerrada</span>}
-                        {!["ordem_gerada", "em_tratativa_com_fornecedor", "venda_concluida", "confirmado", "entregue", "cliente_nao_cumpriu", "cancelado"].includes(r.status) && (
-                          <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-orange-600 text-xs font-medium hover:underline">Ver</Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {myMarketOrders.length === 0 && myReservations.length === 0 && (
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
-            Nenhuma ordem ou intenção encontrada. <Link to="/fornecedor/criar-oferta" className="text-orange-600 font-semibold hover:underline ml-1">Criar oferta</Link>
+            {allRows.length === 0
+              ? <><span>Nenhuma ordem ou intenção encontrada.</span> <Link to="/fornecedor/criar-oferta" className="text-orange-600 font-semibold hover:underline ml-1">Criar oferta</Link></>
+              : "Nenhum pedido para o filtro selecionado."}
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {clientModal && (
+        <ClientModal
+          buyer={getBuyerForModal(clientModal)}
+          order={{ product: clientModal.product, purchaseMode: clientModal.kind === "market" ? "market" : "collective", quantity: clientModal.quantity, unit: clientModal.unit, unitPrice: clientModal.unitPrice, totalAmount: clientModal.totalAmount, status: clientModal.status, createdAt: clientModal.createdAt }}
+          supplierName={supplierName}
+          onClose={() => setClientModal(null)}
+        />
+      )}
+      {editStatusRow && (
+        <EditStatusModal
+          currentStatus={editStatusRow.status}
+          isMarket={editStatusRow.kind === "market"}
+          onSave={(newStatus) => handleSaveStatus(editStatusRow, newStatus)}
+          onClose={() => setEditStatusRow(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -3,7 +3,8 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Package, ArrowLeft, FileDown, Headphones, ExternalLink, Zap, Users, Info } from "lucide-react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
-import { currency, dateLabel, offerProgress } from "../utils/business";
+import { currency, dateLabel, getCurrentCollectivePrice, getBestCollectivePrice, getNextTier, offerProgress } from "../utils/business";
+import { ProgressBarMeta } from "../components/ProgressBarMeta";
 import type { MarketOrderStatus, ReservationStatus } from "../types";
 
 const FACILITADORA_NOTICE = "A Zuppi atua como plataforma facilitadora de conexão comercial. Pagamento, emissão fiscal, retirada, entrega e demais condições operacionais devem ser tratados diretamente entre comprador e fornecedor.";
@@ -186,13 +187,20 @@ export function BuyerPurchasesPage() {
                     </div>
                     <p className="text-sm text-gray-500">{reservation.supplierSnapshot.companyName}</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      {reservation.quantity.toLocaleString("pt-BR")} {reservation.unit} · {currency(reservation.unitPrice)}/{reservation.unit} · <b className="text-blue-600">{currency(reservation.totalAmount)}</b>
+                      {reservation.quantity.toLocaleString("pt-BR")} {reservation.unit} · <b className="text-blue-600">{currency(reservation.totalAmount)}</b>
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Coletiva · {dateLabel(reservation.createdAt)}
-                      {progress && ` · Meta: ${progress.percent}%`}
-                      {offer && ` · ${daysLeft(offer.deadline)}d restantes`}
-                    </p>
+                    {offer && progress && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>Preço atual: <b className="text-blue-600">{currency(getCurrentCollectivePrice(offer))}/{offer.unit}</b></span>
+                          <span>Meta: {progress.percent}%</span>
+                        </div>
+                        <ProgressBarMeta current={progress.current} total={progress.target} />
+                        {(() => { const nextTier = getNextTier(offer); return nextTier ? <p className="text-xs text-blue-500">📈 Próxima faixa em {nextTier.percentage}%: {currency(nextTier.price)}/{offer.unit} · Melhor: {currency(getBestCollectivePrice(offer))}</p> : null; })()}
+                        <p className="text-xs text-gray-400">Coletiva · {dateLabel(reservation.createdAt)}{offer.deadline ? ` · ${daysLeft(offer.deadline)}d restantes` : ""}</p>
+                      </div>
+                    )}
+                    {!offer && <p className="text-xs text-gray-400 mt-0.5">Coletiva · {dateLabel(reservation.createdAt)}</p>}
                   </div>
                   <div className="flex flex-col items-start md:items-end gap-2 flex-shrink-0">
                     <span className={`${badgeClass[reservation.status] || "badge-aguardando_aprovacao"} text-xs`}>

@@ -8,6 +8,7 @@ import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
 import { BuyerDashboardPage } from "./pages/BuyerDashboardPage";
 import { BuyerPurchaseDetailPage, BuyerPurchasesPage } from "./pages/BuyerPurchasesPage";
+import { BuyerCollectivePage, BuyerMarketPage } from "./pages/BuyerOffersPage";
 import { BuyerReportsPage } from "./pages/BuyerReportsPage";
 import { GestaoPage } from "./pages/GestaoPage";
 import { HomePage } from "./pages/HomePage";
@@ -44,6 +45,8 @@ export default function App() {
           <Route path="/ofertas" element={<OffersPage />} />
           <Route path="/ofertas/:id" element={<OfferDetailPage />} />
           <Route path="/comprador" element={<BuyerDashboardPage />} />
+          <Route path="/comprador/market" element={<BuyerMarketPage />} />
+          <Route path="/comprador/compra-coletiva" element={<BuyerCollectivePage />} />
           <Route path="/comprador/minhas-compras" element={<BuyerPurchasesPage />} />
           <Route path="/comprador/minhas-compras/:id" element={<BuyerPurchaseDetailPage />} />
           <Route path="/comprador/relatorio" element={<BuyerReportsPage />} />
@@ -54,7 +57,8 @@ export default function App() {
           <Route path="/fornecedor/criar-oferta" element={<SupplierCreateOfferPage />} />
           <Route path="/fornecedor/ofertas" element={<SupplierOffersPage />} />
           <Route path="/fornecedor/ofertas/:id" element={<SupplierOfferDetailPage />} />
-          <Route path="/fornecedor/pre-pedidos" element={<SupplierPreOrdersPage />} />
+          <Route path="/fornecedor/pedidos" element={<SupplierPreOrdersPage />} />
+          <Route path="/fornecedor/pre-pedidos" element={<Navigate to="/fornecedor/pedidos" replace />} />
           <Route path="/fornecedor/pre-pedidos/:id" element={<SupplierPreOrderDetailPage />} />
           <Route path="/fornecedor/relatorio-clientes" element={<SupplierClientsReportPage />} />
           <Route path="/fornecedor/relatorio-compras" element={<SupplierPurchasesReportPage />} />

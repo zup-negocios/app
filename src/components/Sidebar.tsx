@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Tag, Package, ShoppingCart, BarChart2,
+  LayoutDashboard, Package, ShoppingCart, BarChart2,
   Settings, PlusCircle, Sliders, Crown, Headphones,
-  ChevronRight, Users, Shield
+  ChevronRight, Users, Shield, Zap,
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
 
@@ -17,7 +17,8 @@ interface NavItem {
 
 const buyerNav: NavItem[] = [
   { to: "/comprador", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/ofertas", label: "Ofertas abertas", icon: Tag },
+  { to: "/comprador/market", label: "Market Zuppi", icon: Zap },
+  { to: "/comprador/compra-coletiva", label: "Compra coletiva", icon: Users },
   { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
   { to: "/comprador/relatorio", label: "Relatórios", icon: BarChart2 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
@@ -27,7 +28,7 @@ const supplierNav: NavItem[] = [
   { to: "/fornecedor", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/fornecedor/ofertas", label: "Minhas ofertas", icon: Package },
   { to: "/fornecedor/criar-oferta", label: "Criar oferta", icon: PlusCircle },
-  { to: "/fornecedor/pre-pedidos", label: "Pré-pedidos", icon: ShoppingCart },
+  { to: "/fornecedor/pedidos", label: "Pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
   { to: "/fornecedor/relatorio-compras", label: "Relatórios", icon: BarChart2 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },

@@ -82,6 +82,22 @@ export const buyerSeeds: BuyerProfile[] = [
     fulfilledPurchases: 0,
     brokenIntentions: 2,
   },
+  {
+    id: "buyer-5",
+    role: "buyer",
+    buyerType: "b2b",
+    companyName: "Restaurante Sabor Caseiro",
+    cnpj: "98.765.432/0001-11",
+    contactName: "Roberto Alves",
+    whatsapp: "(41) 99888-7777",
+    email: "roberto@saborcaseiro.com",
+    password: "123456",
+    city: "Curitiba",
+    segment: "restaurante",
+    rating: 95,
+    fulfilledPurchases: 5,
+    brokenIntentions: 0,
+  },
 ];
 
 export const supplierSeeds: SupplierProfile[] = [
@@ -118,6 +134,23 @@ export const supplierSeeds: SupplierProfile[] = [
     planoFornecedor: "gratuito",
     commissionRate: 0.03,
     currentPlan: "free",
+  },
+  {
+    id: "supplier-3",
+    role: "supplier",
+    companyName: "Distribuidora Parana",
+    cnpj: "77.888.999/0001-22",
+    contactName: "Fernanda Lopes",
+    whatsapp: "(41) 98877-6655",
+    email: "fernanda@distribuidorapr.com",
+    password: "123456",
+    city: "Curitiba",
+    categories: "alimentos, bebidas",
+    supplierType: "distribuidor",
+    approved: true,
+    planoFornecedor: "assinante",
+    commissionRate: 0.03,
+    currentPlan: "pro",
   },
 ];
 
@@ -273,6 +306,42 @@ export const offerSeeds: Offer[] = [
     ],
   }),
   offer({
+    id: "offer-6",
+    supplierId: "supplier-3",
+    product: "Arroz Branco 5kg",
+    brand: "Dist. Parana",
+    category: "Alimentos",
+    categoryId: "alimentos",
+    subcategory: "Graos",
+    description: "Arroz tipo 1 premium para estabelecimentos alimenticios.",
+    unit: "saco",
+    normalPrice: 32,
+    zuppiPrice: 26,
+    minGoal: 5000,
+    minimumPurchasePerBuyer: 50,
+    targetType: "quantity",
+    targetQuantity: 5000,
+    reservedQty: 1800,
+    deadline: "2026-07-31",
+    region: "Sul",
+    paymentTerms: "Pix direto com o fornecedor",
+    deliveryTime: "ate 5 dias apos fechamento",
+    notes: "Disponivel para todo o Parana e Santa Catarina",
+    status: "ativa",
+    marketSaleEnabled: true,
+    marketPrice: 30.0,
+    marketMinimumQuantity: 20,
+    marketStock: 300,
+    collectiveSaleEnabled: true,
+    collectiveMinimumQuantity: 50,
+    progressiveTiers: [
+      { percentage: 25, price: 28.5 },
+      { percentage: 50, price: 27.0 },
+      { percentage: 75, price: 25.5 },
+      { percentage: 100, price: 24.0 },
+    ],
+  }),
+  offer({
     id: "offer-5",
     supplierId: "supplier-1",
     product: "Caixa Pizza 35cm",
@@ -312,14 +381,18 @@ export const offerSeeds: Offer[] = [
 const buyer1 = buyerSeeds[0];
 const buyer2 = buyerSeeds[1];
 const buyer3 = buyerSeeds[2];
+const buyer5 = buyerSeeds[4];
 const supplier1 = supplierSeeds[0];
 const supplier2 = supplierSeeds[1];
+const supplier3 = supplierSeeds[2];
 
 const snap1 = { companyName: buyer1.companyName, cnpj: buyer1.cnpj, contactName: buyer1.contactName, whatsapp: buyer1.whatsapp, email: buyer1.email, city: buyer1.city, segment: buyer1.segment };
 const snap2 = { companyName: buyer2.companyName, cnpj: buyer2.cnpj, contactName: buyer2.contactName, whatsapp: buyer2.whatsapp, email: buyer2.email, city: buyer2.city, segment: buyer2.segment };
 const snap3 = { companyName: buyer3.companyName, cnpj: undefined, contactName: buyer3.contactName, whatsapp: buyer3.whatsapp, email: buyer3.email, city: buyer3.city, segment: undefined };
+const snap5 = { companyName: buyer5.companyName, cnpj: buyer5.cnpj, contactName: buyer5.contactName, whatsapp: buyer5.whatsapp, email: buyer5.email, city: buyer5.city, segment: buyer5.segment };
 const snapS1 = { companyName: supplier1.companyName, cnpj: supplier1.cnpj, contactName: supplier1.contactName, whatsapp: supplier1.whatsapp, email: supplier1.email, city: supplier1.city };
 const snapS2 = { companyName: supplier2.companyName, cnpj: supplier2.cnpj, contactName: supplier2.contactName, whatsapp: supplier2.whatsapp, email: supplier2.email, city: supplier2.city };
+const snapS3 = { companyName: supplier3.companyName, cnpj: supplier3.cnpj, contactName: supplier3.contactName, whatsapp: supplier3.whatsapp, email: supplier3.email, city: supplier3.city };
 
 // Collective intents (via Reservation model, purchaseMode: "collective")
 export const reservationSeeds: Reservation[] = [
@@ -418,6 +491,46 @@ export const reservationSeeds: Reservation[] = [
     status: "aguardando_meta",
     createdAt: "2026-06-13T14:00:00.000Z",
   },
+  {
+    id: "preorder-6",
+    offerId: "offer-6",
+    supplierId: "supplier-3",
+    buyerId: "buyer-5",
+    buyerType: "b2b",
+    purchaseMode: "collective",
+    quantity: 200,
+    unit: "saco",
+    unitPrice: 27.0,
+    totalAmount: 5400,
+    product: "Arroz Branco 5kg",
+    brand: "Dist. Parana",
+    category: "Alimentos",
+    buyerSnapshot: snap5,
+    supplierSnapshot: snapS3,
+    status: "venda_concluida",
+    finalPrice: 27.0,
+    finalTotal: 5400,
+    createdAt: "2026-05-20T10:00:00.000Z",
+  },
+  {
+    id: "preorder-7",
+    offerId: "offer-4",
+    supplierId: "supplier-2",
+    buyerId: "buyer-5",
+    buyerType: "b2b",
+    purchaseMode: "collective",
+    quantity: 30,
+    unit: "fardo",
+    unitPrice: 23.0,
+    totalAmount: 690,
+    product: "Papel Toalha Interfolhado",
+    brand: "SoftPro",
+    category: "Higiene",
+    buyerSnapshot: snap5,
+    supplierSnapshot: snapS2,
+    status: "cliente_nao_cumpriu",
+    createdAt: "2026-05-18T09:00:00.000Z",
+  },
 ];
 
 // Market immediate orders
@@ -472,6 +585,40 @@ export const marketOrderSeeds: MarketOrder[] = [
     supplierSnapshot: snapS1,
     status: "ordem_gerada",
     createdAt: "2026-06-17T08:00:00.000Z",
+  },
+  {
+    id: "market-4",
+    offerId: "offer-6",
+    supplierId: "supplier-3",
+    buyerId: "buyer-5",
+    buyerType: "b2b",
+    purchaseMode: "market",
+    quantity: 100,
+    unitPrice: 30.0,
+    totalAmount: 3000,
+    product: "Arroz Branco 5kg",
+    unit: "saco",
+    buyerSnapshot: snap5,
+    supplierSnapshot: snapS3,
+    status: "venda_concluida",
+    createdAt: "2026-06-10T13:00:00.000Z",
+  },
+  {
+    id: "market-5",
+    offerId: "offer-2",
+    supplierId: "supplier-1",
+    buyerId: "buyer-1",
+    buyerType: "b2b",
+    purchaseMode: "market",
+    quantity: 50,
+    unitPrice: 17.0,
+    totalAmount: 850,
+    product: "Acucar Cristal 5kg",
+    unit: "pacote",
+    buyerSnapshot: snap1,
+    supplierSnapshot: snapS1,
+    status: "cliente_nao_cumpriu",
+    createdAt: "2026-05-28T10:00:00.000Z",
   },
 ];
 

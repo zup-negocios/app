@@ -183,9 +183,10 @@ function LiveCounter({ count }: { count: number }) {
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 export function GestaoPage() {
-  const { buyers, suppliers, offers, reservations, updateSupplierApproval, updateSupplierPlan } = useAppState();
+  const { buyers, suppliers, offers, reservations, marketOrders, updateSupplierApproval, updateSupplierPlan } = useAppState();
   const [section, setSection] = useState<GestaoSection>("dashboard");
   const [reportMonth, setReportMonth] = useState(lastMonthOptions()[0].key);
+  const [dashMonth, setDashMonth] = useState(lastMonthOptions()[0].key);
 
   const totalReserved = reservations.reduce((a, r) => a + r.totalAmount, 0);
   const activeOffers = offers.filter(o => ["ativa", "aberta"].includes(o.status));
@@ -461,7 +462,7 @@ export function GestaoPage() {
             <p className="text-orange-100 text-sm font-medium mb-2">Total negociado na plataforma</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <AnimatedKpi value={totalReserved} label="volume reservado" isCurrency />
-              <AnimatedKpi value={reservations.length} label="pré-pedidos" />
+              <AnimatedKpi value={reservations.length} label="pedidos coletivos" />
               <AnimatedKpi value={buyers.length + suppliers.length} label="usuários cadastrados" />
               <AnimatedKpi value={reachedOffers.length} label="metas atingidas" />
             </div>
@@ -475,9 +476,33 @@ export function GestaoPage() {
             <KpiCard title="Ofertas ativas" value={activeOffers.length} icon={Tag} color="orange" />
           </div>
 
+          {/* Monthly KPIs — Market + Coletiva */}
+          {(() => {
+            const dashCollective = reservations.filter(r => monthKey(r.createdAt) === dashMonth && r.purchaseMode !== "market");
+            const dashMarket = marketOrders.filter(o => monthKey(o.createdAt) === dashMonth);
+            const dashConcluded = [...dashCollective.filter(r => ["venda_concluida","confirmado","entregue"].includes(r.status)), ...dashMarket.filter(o => o.status === "venda_concluida")];
+            const dashNotFulfilled = [...dashCollective.filter(r => r.status === "cliente_nao_cumpriu"), ...dashMarket.filter(o => o.status === "cliente_nao_cumpriu")];
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-600">Resultados do mês</h3>
+                  <select value={dashMonth} onChange={e => setDashMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs">
+                    {lastMonthOptions().map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                  </select>
+                </div>
+                <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <KpiCard title="⚡ Market Zuppi" value={String(dashMarket.length)} sub={currency(dashMarket.reduce((a,o)=>a+o.totalAmount,0))} icon={ShoppingCart} color="orange" />
+                  <KpiCard title="👥 Compra coletiva" value={String(dashCollective.length)} sub={currency(dashCollective.reduce((a,r)=>a+r.totalAmount,0))} icon={Users} color="purple" />
+                  <KpiCard title="Vendas concluídas" value={String(dashConcluded.length)} sub={currency(dashConcluded.reduce((a,r)=>a+r.totalAmount,0))} icon={CheckCircle} color="green" />
+                  <KpiCard title="Não cumpriram" value={String(dashNotFulfilled.length)} icon={AlertTriangle} color="yellow" alert={dashNotFulfilled.length > 0} />
+                </div>
+              </div>
+            );
+          })()}
+
           {/* KPIs row 2 + live counter */}
           <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">
-            <KpiCard title="Pré-pedidos gerados" value={reservations.length} icon={ShoppingCart} color="purple" />
+            <KpiCard title="Pedidos gerados" value={reservations.length} icon={ShoppingCart} color="purple" />
             <KpiCard title="Aguardando meta" value={reservations.filter(r => r.status === "aguardando_meta").length} icon={Clock} color="amber" />
             <KpiCard title="Metas atingidas" value={reachedOffers.length} icon={Target} color="green" />
             <KpiCard title="Ticket médio" value={currency(avgTicket)} icon={TrendingUp} color="teal" />
