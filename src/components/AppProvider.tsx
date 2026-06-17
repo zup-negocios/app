@@ -1,13 +1,14 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import type { BuyerProfile, Category, Offer, Rating, RatingTarget, Reservation, SessionUser, SupplierProfile } from "../types";
+import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
 import { bootstrapStorage, store } from "../utils/storage";
-import { getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
+import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
 
 interface AppState {
   buyers: BuyerProfile[];
   suppliers: SupplierProfile[];
   offers: Offer[];
   reservations: Reservation[];
+  marketOrders: MarketOrder[];
   ratings: Rating[];
   categories: Category[];
   session: SessionUser | null;
@@ -18,8 +19,13 @@ interface AppState {
   addSupplier: (data: Omit<SupplierProfile, "id" | "role" | "approved" | "planoFornecedor"> & { planoFornecedor?: SupplierProfile["planoFornecedor"] }) => SupplierProfile;
   addOffer: (data: Omit<Offer, "id" | "reservedQty" | "reservedAmount" | "status" | "approved" | "editStatus" | "createdAt">) => void;
   updateOffer: (id: string, data: Partial<Offer>) => { ok: boolean; message?: string };
+  updateOfferImage: (id: string, imageBase64: string | undefined) => void;
   requestOfferEdit: (id: string) => void;
   reserve: (offerId: string, buyerId: string, quantity: number) => { ok: boolean; message?: string };
+  createMarketOrder: (offerId: string, buyerId: string, quantity: number, buyerType?: BuyerType) => { ok: boolean; message?: string; orderId?: string };
+  updateMarketOrderStatus: (orderId: string, status: MarketOrderStatus) => void;
+  updateReservationStatus: (reservationId: string, status: ReservationStatus) => void;
+  updateBuyerScore: (buyerId: string, fulfilled: boolean) => void;
   updateSupplierApproval: (id: string, approved: boolean) => void;
   updateOfferApproval: (id: string, approved: boolean) => void;
   updateSupplierPlan: (id: string, planoFornecedor: SupplierProfile["planoFornecedor"]) => void;
@@ -42,6 +48,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [suppliers, setSuppliers] = useState(store.getSuppliers());
   const [offers, setOffers] = useState(store.getOffers());
   const [reservations, setReservations] = useState(store.getReservations());
+  const [marketOrders, setMarketOrders] = useState(store.getMarketOrders());
   const [ratings, setRatings] = useState(store.getRatings());
   const [categories, setCategories] = useState(store.getCategories());
   const [session, setSession] = useState(store.getSession());
@@ -61,6 +68,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       suppliers,
       offers,
       reservations,
+      marketOrders,
       ratings,
       categories,
       session,
@@ -132,16 +140,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       requestOfferEdit: (id) => {
         syncOffers(offers.map((offer) => (offer.id === id ? { ...offer, editStatus: "edicao_solicitada" } : offer)));
       },
+      updateOfferImage: (id, imageBase64) => {
+        syncOffers(offers.map((offer) => (offer.id === id ? { ...offer, imageBase64 } : offer)));
+      },
       reserve: (offerId, buyerId, quantity) => {
         const offer = offers.find((item) => item.id === offerId);
         const buyer = buyers.find((item) => item.id === buyerId);
         const supplier = offer ? suppliers.find((item) => item.id === offer.supplierId) : undefined;
         if (!offer || !buyer || !supplier) return { ok: false, message: "Nao foi possivel localizar a oferta." };
-        if (quantity < offer.minimumPurchasePerBuyer) {
-          return { ok: false, message: `A quantidade minima para participar desta oferta e de ${offer.minimumPurchasePerBuyer} ${offer.unit}.` };
+        const minQty = offer.collectiveMinimumQuantity || offer.minimumPurchasePerBuyer;
+        if (quantity < minQty) {
+          return { ok: false, message: `A quantidade minima para participar desta oferta e de ${minQty} ${offer.unit}.` };
         }
-
-        const totalAmount = parseDecimal(quantity * offer.zuppiPrice);
+        const unitPrice = getCurrentCollectivePrice(offer);
+        const totalAmount = parseDecimal(quantity * unitPrice);
         const allReservations: Reservation[] = [
           ...reservations,
           {
@@ -149,15 +161,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             offerId,
             supplierId: offer.supplierId,
             buyerId,
+            buyerType: buyer.buyerType,
+            purchaseMode: "collective",
             quantity,
             unit: offer.unit,
-            unitPrice: offer.zuppiPrice,
+            unitPrice,
             totalAmount,
             product: offer.product,
             brand: offer.brand,
             category: offer.category,
-            buyerSnapshot: buyer,
-            supplierSnapshot: supplier,
+            buyerSnapshot: { companyName: buyer.companyName, cnpj: buyer.cnpj, contactName: buyer.contactName, whatsapp: buyer.whatsapp, email: buyer.email, city: buyer.city, segment: buyer.segment },
+            supplierSnapshot: { companyName: supplier.companyName, cnpj: supplier.cnpj, contactName: supplier.contactName, whatsapp: supplier.whatsapp, email: supplier.email, city: supplier.city },
             status: "aguardando_meta",
             createdAt: new Date().toISOString(),
           },
@@ -173,7 +187,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             : item,
         );
         syncOffers(allOffers, allReservations);
-        return { ok: true, message: "Sua reserva foi registrada com sucesso. Quando a meta for atingida, voce sera avisado para confirmar o pedido." };
+        return { ok: true, message: "Sua intenção de compra foi registrada! Quando a oferta encerrar, você sera avisado sobre o preço final e a ordem gerada." };
+      },
+      createMarketOrder: (offerId, buyerId, quantity, buyerType) => {
+        const offer = offers.find((item) => item.id === offerId);
+        const buyer = buyers.find((item) => item.id === buyerId);
+        const supplier = offer ? suppliers.find((item) => item.id === offer.supplierId) : undefined;
+        if (!offer || !buyer || !supplier) return { ok: false, message: "Nao foi possivel localizar a oferta." };
+        if (!offer.marketSaleEnabled) return { ok: false, message: "Esta oferta nao possui compra imediata ativada." };
+        const minQty = offer.marketMinimumQuantity || 1;
+        if (quantity < minQty) {
+          return { ok: false, message: `A quantidade minima para compra no Market e de ${minQty} ${offer.unit}.` };
+        }
+        const unitPrice = offer.marketPrice || offer.normalPrice;
+        const totalAmount = parseDecimal(quantity * unitPrice);
+        const orderId = uid("market");
+        const newOrder: MarketOrder = {
+          id: orderId,
+          offerId,
+          supplierId: offer.supplierId,
+          buyerId,
+          buyerType: buyerType || buyer.buyerType,
+          purchaseMode: "market",
+          quantity,
+          unitPrice,
+          totalAmount,
+          product: offer.product,
+          unit: offer.unit,
+          buyerSnapshot: { companyName: buyer.companyName, cnpj: buyer.cnpj, contactName: buyer.contactName, whatsapp: buyer.whatsapp, email: buyer.email, city: buyer.city, segment: buyer.segment },
+          supplierSnapshot: { companyName: supplier.companyName, cnpj: supplier.cnpj, contactName: supplier.contactName, whatsapp: supplier.whatsapp, email: supplier.email, city: supplier.city },
+          status: "ordem_gerada",
+          createdAt: new Date().toISOString(),
+        };
+        const all = [...marketOrders, newOrder];
+        setMarketOrders(all);
+        store.setMarketOrders(all);
+        return { ok: true, message: "Ordem de compra gerada! O fornecedor foi notificado e dara sequencia a negociacao.", orderId };
+      },
+      updateMarketOrderStatus: (orderId, status) => {
+        const all = marketOrders.map((o) => (o.id === orderId ? { ...o, status } : o));
+        setMarketOrders(all);
+        store.setMarketOrders(all);
+      },
+      updateReservationStatus: (reservationId, status) => {
+        const all = reservations.map((r) => (r.id === reservationId ? { ...r, status } : r));
+        setReservations(all);
+        store.setReservations(all);
+      },
+      updateBuyerScore: (buyerId, fulfilled) => {
+        const all = buyers.map((b) => {
+          if (b.id !== buyerId) return b;
+          const brokenIntentions = fulfilled ? b.brokenIntentions ?? 0 : (b.brokenIntentions ?? 0) + 1;
+          const fulfilledPurchases = fulfilled ? (b.fulfilledPurchases ?? 0) + 1 : b.fulfilledPurchases ?? 0;
+          const rating = fulfilled ? b.rating ?? 100 : Math.max(0, (b.rating ?? 100) - 10);
+          return { ...b, rating, fulfilledPurchases, brokenIntentions };
+        });
+        setBuyers(all);
+        store.setBuyers(all);
       },
       updateSupplierApproval: (id, approved) => {
         const all = suppliers.map((supplier) => (supplier.id === id ? { ...supplier, approved } : supplier));
@@ -199,7 +269,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!trimmed) return;
         const all = [
           ...categories,
-          { id: trimmed.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"), name: trimmed, icon: "Circle", active: true, order: categories.length + 1, subcategories: [] },
+          { id: trimmed.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-"), name: trimmed, icon: "Circle", active: true, order: categories.length + 1, subcategories: [] },
         ];
         setCategories(all);
         store.setCategories(all);
@@ -228,7 +298,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return { average, count: scoped.length };
       },
     }),
-    [buyers, suppliers, offers, reservations, ratings, categories, session],
+    [buyers, suppliers, offers, reservations, marketOrders, ratings, categories, session],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

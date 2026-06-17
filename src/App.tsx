@@ -8,6 +8,7 @@ import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
 import { BuyerDashboardPage } from "./pages/BuyerDashboardPage";
 import { BuyerPurchaseDetailPage, BuyerPurchasesPage } from "./pages/BuyerPurchasesPage";
+import { BuyerReportsPage } from "./pages/BuyerReportsPage";
 import { GestaoPage } from "./pages/GestaoPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/comprador" element={<BuyerDashboardPage />} />
           <Route path="/comprador/minhas-compras" element={<BuyerPurchasesPage />} />
           <Route path="/comprador/minhas-compras/:id" element={<BuyerPurchaseDetailPage />} />
+          <Route path="/comprador/relatorio" element={<BuyerReportsPage />} />
           <Route path="/comprador/pedidos" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/comprador/ofertas-participando" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/comprador/compras-realizadas" element={<Navigate to="/comprador/minhas-compras" replace />} />

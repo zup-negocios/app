@@ -1,4 +1,4 @@
-import type { Offer, Reservation, ReservationStatus } from "../types";
+import type { Offer, ProgressiveTier, Reservation, ReservationStatus } from "../types";
 
 export function getReservedValue(offer: Offer) {
   return offer.reservedAmount || offer.reservedQty * offer.zuppiPrice;
@@ -32,6 +32,9 @@ export function updateOfferStatus(offer: Offer): Offer {
 
 export function recalcReservationStatuses(offers: Offer[], reservations: Reservation[]): Reservation[] {
   return reservations.map((reservation) => {
+    // Don't overwrite market orders or manually-set terminal statuses
+    if (reservation.purchaseMode === "market") return reservation;
+    if (["venda_concluida", "cliente_nao_cumpriu", "cancelado"].includes(reservation.status)) return reservation;
     const offer = offers.find((item) => item.id === reservation.offerId);
     if (!offer) return reservation;
     return { ...reservation, status: statusFromOffer(offer) };
@@ -69,7 +72,6 @@ export function maxOfferDeadlineInputValue() {
 export function isDeadlineWithinThreeDays(dateString: string) {
   const selected = new Date(`${dateString}T23:59:59`);
   const now = new Date();
-  // Allow up to 90 days ahead
   const max = new Date();
   max.setDate(max.getDate() + 90);
   max.setHours(23, 59, 59, 999);
@@ -106,4 +108,64 @@ export function offerAvailability(offer: Offer) {
     availablePercent: percent(available, max),
     reservedPercent: percent(offer.reservedQty, max),
   };
+}
+
+// ─── Progressive tiers ─────────────────────────────────────────────────────
+
+export function getCurrentCollectivePrice(offer: Offer): number {
+  const tiers = offer.progressiveTiers;
+  if (!tiers || tiers.length === 0) return offer.zuppiPrice;
+  const pct = offerProgress(offer).percent;
+  const sorted = [...tiers].sort((a, b) => b.percentage - a.percentage);
+  const active = sorted.find((t) => pct >= t.percentage);
+  return active ? active.price : offer.zuppiPrice;
+}
+
+export function getBestCollectivePrice(offer: Offer): number {
+  const tiers = offer.progressiveTiers;
+  if (!tiers || tiers.length === 0) return offer.zuppiPrice;
+  return Math.min(...tiers.map((t) => t.price));
+}
+
+export function getNextTier(offer: Offer): ProgressiveTier | null {
+  const tiers = offer.progressiveTiers;
+  if (!tiers || tiers.length === 0) return null;
+  const pct = offerProgress(offer).percent;
+  const sorted = [...tiers].sort((a, b) => a.percentage - b.percentage);
+  return sorted.find((t) => t.percentage > pct) || null;
+}
+
+export function getMarketPrice(offer: Offer): number {
+  return offer.marketPrice ?? offer.normalPrice;
+}
+
+export function calculateSupplierCommission(concludedAmount: number, commissionRate: number): number {
+  return concludedAmount * commissionRate;
+}
+
+// ─── Month utilities ────────────────────────────────────────────────────────
+
+export function monthKey(dateIso: string) {
+  return dateIso.slice(0, 7);
+}
+
+const MONTH_NAMES_PT = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+export function monthLabel(key: string) {
+  const [year, month] = key.split("-").map(Number);
+  return `${MONTH_NAMES_PT[month - 1]} de ${year}`;
+}
+
+export function lastMonthOptions(count = 12) {
+  const now = new Date();
+  const options: { key: string; label: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    options.push({ key, label: monthLabel(key) });
+  }
+  return options;
 }

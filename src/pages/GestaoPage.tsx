@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { useAppState } from "../components/AppProvider";
-import { currency } from "../utils/business";
+import { currency, lastMonthOptions, monthKey, monthLabel } from "../utils/business";
 import {
   Users, Building2, Tag, ShoppingCart, Target, TrendingUp, Clock,
   AlertTriangle, CheckCircle, ChevronRight, LogOut, LayoutDashboard,
@@ -185,6 +185,7 @@ function LiveCounter({ count }: { count: number }) {
 export function GestaoPage() {
   const { buyers, suppliers, offers, reservations, updateSupplierApproval, updateSupplierPlan } = useAppState();
   const [section, setSection] = useState<GestaoSection>("dashboard");
+  const [reportMonth, setReportMonth] = useState(lastMonthOptions()[0].key);
 
   const totalReserved = reservations.reduce((a, r) => a + r.totalAmount, 0);
   const activeOffers = offers.filter(o => ["ativa", "aberta"].includes(o.status));
@@ -375,12 +376,80 @@ export function GestaoPage() {
             </div>
           )}
 
-          {(section === "relatorios" || section === "configuracoes") && (
+          {section === "relatorios" && (() => {
+            const monthReservations = reservations.filter(r => monthKey(r.createdAt) === reportMonth);
+            const monthOffers = offers.filter(o => monthKey(o.createdAt) === reportMonth);
+            const monthTotal = monthReservations.reduce((a, r) => a + r.totalAmount, 0);
+            const monthBuyers = new Set(monthReservations.map(r => r.buyerId)).size;
+            const monthSuppliers = new Set(monthOffers.map(o => o.supplierId)).size;
+
+            return (
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-gray-800">Relatório mensal da plataforma</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">Resultado consolidado de compradores e fornecedores por mês.</p>
+                  </div>
+                  <select value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    {lastMonthOptions().map(m => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <KpiCard title="Volume negociado" value={currency(monthTotal)} icon={DollarSign} color="orange" />
+                  <KpiCard title="Pré-pedidos no mês" value={monthReservations.length} icon={ShoppingCart} color="purple" />
+                  <KpiCard title="Compradores ativos" value={monthBuyers} icon={Users} color="blue" />
+                  <KpiCard title="Fornecedores com ofertas novas" value={monthSuppliers} icon={Building2} color="green" />
+                </div>
+
+                <div className="card">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="font-bold text-gray-800">Pré-pedidos em {monthLabel(reportMonth)}</h3>
+                  </div>
+                  <div className="overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>{["Produto", "Comprador", "Fornecedor", "Qtd", "Valor", "Data", "Status"].map(h => (
+                          <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                        ))}</tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {monthReservations.length === 0 ? (
+                          <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Nenhum pré-pedido neste mês.</td></tr>
+                        ) : monthReservations.map(r => {
+                          const sup = suppliers.find(s => s.id === r.supplierId);
+                          return (
+                            <tr key={r.id} className="hover:bg-gray-50/50">
+                              <td className="px-4 py-3 font-medium">{r.product}</td>
+                              <td className="px-4 py-3 text-gray-600">{r.buyerSnapshot.companyName}</td>
+                              <td className="px-4 py-3 text-gray-500">{sup?.companyName || "—"}</td>
+                              <td className="px-4 py-3">{r.quantity} {r.unit}</td>
+                              <td className="px-4 py-3 font-semibold text-orange-600">{currency(r.totalAmount)}</td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
+                              <td className="px-4 py-3"><span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{r.status.replace(/_/g, " ")}</span></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <button className="btn-primary mx-auto" onClick={() => window.print()}>Exportar relatório (PDF)</button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {section === "configuracoes" && (
             <div className="card p-12 text-center">
               <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
-                {section === "relatorios" ? <FileText size={24} className="text-orange-400" /> : <Settings size={24} className="text-orange-400" />}
+                <Settings size={24} className="text-orange-400" />
               </div>
-              <h3 className="font-bold text-gray-700 text-lg">{section === "relatorios" ? "Relatórios" : "Configurações"}</h3>
+              <h3 className="font-bold text-gray-700 text-lg">Configurações</h3>
               <p className="text-sm text-gray-400 mt-2">Em desenvolvimento — disponível em breve.</p>
             </div>
           )}

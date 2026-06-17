@@ -19,6 +19,7 @@ const buyerNav: NavItem[] = [
   { to: "/comprador", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/ofertas", label: "Ofertas abertas", icon: Tag },
   { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
+  { to: "/comprador/relatorio", label: "Relatórios", icon: BarChart2 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -28,7 +29,7 @@ const supplierNav: NavItem[] = [
   { to: "/fornecedor/criar-oferta", label: "Criar oferta", icon: PlusCircle },
   { to: "/fornecedor/pre-pedidos", label: "Pré-pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
-  { to: "/fornecedor/relatorio-clientes", label: "Relatórios", icon: BarChart2 },
+  { to: "/fornecedor/relatorio-compras", label: "Relatórios", icon: BarChart2 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

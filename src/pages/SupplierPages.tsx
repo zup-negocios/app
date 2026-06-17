@@ -11,7 +11,7 @@ import {
   TrendingUp, Users, DollarSign, Package, PlusCircle, Eye,
   FileText, Sparkles,
   AlertCircle, Calendar, MapPin, CreditCard, Truck, CheckCircle,
-  Lock, Crown, ExternalLink, Info, ImagePlus, X,
+  Lock, Crown, ExternalLink, ImagePlus, X,
 } from "lucide-react";
 
 const reservationLabel: Record<string, string> = {
@@ -56,7 +56,7 @@ function MetricCard({ title, value, sub, icon: Icon }: {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 export function SupplierDashboardPage() {
-  const { session, suppliers, offers, reservations } = useAppState();
+  const { session, suppliers, offers, reservations, marketOrders } = useAppState();
   const navigate = useNavigate();
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
@@ -64,12 +64,15 @@ export function SupplierDashboardPage() {
   const myOffers = offers.filter(o => o.supplierId === session.id);
   const myOfferIds = new Set(myOffers.map(o => o.id));
   const myReservations = reservations.filter(r => myOfferIds.has(r.offerId));
+  const myMarketOrders = marketOrders.filter(o => myOfferIds.has(o.offerId));
 
   const activeOffers = myOffers.filter(o => ["ativa", "aberta"].includes(o.status)).length;
   const reachedOffers = myOffers.filter(o => o.status === "meta_atingida").length;
   const totalReservedAmount = myReservations.reduce((a, r) => a + r.totalAmount, 0);
-  const uniqueBuyers = new Set(myReservations.map(r => r.buyerId)).size;
+  const marketOrdersValue = myMarketOrders.reduce((a, o) => a + o.totalAmount, 0);
+  const uniqueBuyers = new Set([...myReservations.map(r => r.buyerId), ...myMarketOrders.map(o => o.buyerId)]).size;
   const waiting = myReservations.filter(r => ["aguardando_meta", "em_andamento"].includes(r.status)).length;
+  const pendingMarket = myMarketOrders.filter(o => ["ordem_gerada", "fornecedor_notificado"].includes(o.status)).length;
 
   // Priorities (max 3)
   const priorities = useMemo(() => {
@@ -98,6 +101,7 @@ export function SupplierDashboardPage() {
 
   const recentOffers = myOffers.slice(0, 5);
   const recentReservations = [...myReservations]
+    .filter(r => r.purchaseMode !== "market")
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
@@ -122,10 +126,19 @@ export function SupplierDashboardPage() {
         {/* Main metrics */}
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard title="Ofertas ativas" value={String(activeOffers)} sub={`${reachedOffers} meta(s) atingida(s)`} icon={TrendingUp} />
-          <MetricCard title="Total reservado" value={currency(totalReservedAmount)} sub="valor potencial" icon={DollarSign} />
-          <MetricCard title="Compradores interessados" value={String(uniqueBuyers)} sub="participantes únicos" icon={Users} />
-          <MetricCard title="Pré-pedidos" value={String(myReservations.length)} sub="em andamento" icon={Package} />
+          <MetricCard title="Coletivas" value={String(myReservations.length)} sub={`Intenções · ${currency(totalReservedAmount)}`} icon={Users} />
+          <MetricCard title="Market Zuppi" value={String(myMarketOrders.length)} sub={`${pendingMarket} aguardando · ${currency(marketOrdersValue)}`} icon={DollarSign} />
+          <MetricCard title="Compradores únicos" value={String(uniqueBuyers)} sub="participantes ativos" icon={Package} />
         </div>
+
+        {/* Alert market orders */}
+        {pendingMarket > 0 && (
+          <div className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3">
+            <span className="text-orange-500 font-bold text-sm">⚡</span>
+            <p className="text-sm text-orange-700 font-medium">Você tem <b>{pendingMarket}</b> ordem(s) Market Zuppi aguardando sua atenção.</p>
+            <Link to="/fornecedor/pre-pedidos" className="ml-auto text-xs font-bold text-orange-600 hover:underline">Ver agora</Link>
+          </div>
+        )}
 
         {/* Priorities of the day */}
         {priorities.length > 0 && (
@@ -422,14 +435,31 @@ function ProductImageUpload({ value, onChange }: { value: string | null; onChang
 
 // ─── CREATE OFFER ─────────────────────────────────────────────────────────────
 
+type Tier = { percentage: number; price: number };
+
 export function SupplierCreateOfferPage() {
   const { session, addOffer, categories } = useAppState();
   const navigate = useNavigate();
   const [targetType, setTargetType] = useState<"quantity" | "amount">("quantity");
   const [normalPrice, setNormalPrice] = useState(0);
   const [productImage, setProductImage] = useState<string | null>(null);
+  const [marketEnabled, setMarketEnabled] = useState(true);
+  const [collectiveEnabled, setCollectiveEnabled] = useState(true);
+  const [tiers, setTiers] = useState<Tier[]>([
+    { percentage: 25, price: 0 },
+    { percentage: 50, price: 0 },
+    { percentage: 75, price: 0 },
+    { percentage: 100, price: 0 },
+  ]);
 
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
+
+  const updateTier = (index: number, field: keyof Tier, value: number) => {
+    setTiers(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  };
+
+  const addTier = () => setTiers(prev => [...prev, { percentage: 0, price: 0 }]);
+  const removeTier = (index: number) => setTiers(prev => prev.filter((_, i) => i !== index));
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -438,6 +468,8 @@ export function SupplierCreateOfferPage() {
     const deadline = String(data.get("deadline"));
     const targetQuantity = targetType === "quantity" ? parseDecimal(data.get("targetQuantity")) : undefined;
     const targetAmount = targetType === "amount" ? parseDecimal(data.get("targetAmount")) : undefined;
+    const validTiers = tiers.filter(t => t.percentage > 0 && t.price > 0);
+    const collectiveMinQty = parseDecimal(data.get("collectiveMinQty")) || parseDecimal(data.get("minimumPurchasePerBuyer"));
     addOffer({
       supplierId: session.id,
       product: String(data.get("product")),
@@ -448,9 +480,9 @@ export function SupplierCreateOfferPage() {
       description: "",
       unit: String(data.get("unit")),
       normalPrice: parseDecimal(data.get("normalPrice")),
-      zuppiPrice: parseDecimal(data.get("zuppiPrice")),
+      zuppiPrice: validTiers.length > 0 ? Math.min(...validTiers.map(t => t.price)) : parseDecimal(data.get("zuppiPrice") || data.get("normalPrice")),
       minGoal: targetType === "amount" ? targetAmount || 0 : targetQuantity || 0,
-      minimumPurchasePerBuyer: parseDecimal(data.get("minimumPurchasePerBuyer")),
+      minimumPurchasePerBuyer: collectiveMinQty,
       targetType,
       targetQuantity,
       targetAmount,
@@ -461,6 +493,13 @@ export function SupplierCreateOfferPage() {
       deliveryTime: String(data.get("deliveryTime")),
       notes: String(data.get("notes")),
       imageBase64: productImage || undefined,
+      marketSaleEnabled: marketEnabled,
+      marketPrice: marketEnabled ? parseDecimal(data.get("marketPrice")) : undefined,
+      marketMinimumQuantity: marketEnabled ? parseDecimal(data.get("marketMinQty")) || 1 : undefined,
+      marketStock: marketEnabled && data.get("marketStock") ? parseDecimal(data.get("marketStock")) : undefined,
+      collectiveSaleEnabled: collectiveEnabled,
+      collectiveMinimumQuantity: collectiveEnabled ? collectiveMinQty : undefined,
+      progressiveTiers: collectiveEnabled && validTiers.length > 0 ? validTiers : undefined,
     });
     toast.success("Oferta cadastrada com sucesso.");
     navigate("/fornecedor");
@@ -512,28 +551,119 @@ export function SupplierCreateOfferPage() {
               </div>
             </div>
 
-            {/* Bloco 2 — Preço */}
+            {/* Bloco 2 — Preço base */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Preço</h2>
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Preço de referência</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="label-base">Preço normal</label>
+                  <label className="label-base">Preço normal de mercado</label>
                   <input
                     required name="normalPrice" inputMode="decimal"
                     placeholder="R$ 0,00" className="input-base w-full"
                     onChange={e => setNormalPrice(parseDecimal(e.target.value))}
                   />
                 </div>
-                <div>
-                  <label className="label-base flex items-center gap-1">
-                    Preço Zuppi <Info size={13} className="text-gray-400" />
-                  </label>
-                  <input required name="zuppiPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full" />
-                </div>
               </div>
             </div>
 
-            {/* Bloco 3 — Meta */}
+            {/* Bloco 3 — Modalidades */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Modalidades de venda</h2>
+
+              {/* Market */}
+              <div className={`rounded-2xl border p-4 space-y-4 transition-colors ${marketEnabled ? "border-orange-200 bg-orange-50/30" : "border-gray-100"}`}>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={marketEnabled} onChange={e => setMarketEnabled(e.target.checked)} className="w-4 h-4 accent-orange-500" />
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm flex items-center gap-1.5">⚡ Market Zuppi <span className="text-[10px] font-normal text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">Compra imediata</span></p>
+                    <p className="text-xs text-gray-500">Comprador adquire sem depender de meta coletiva.</p>
+                  </div>
+                </label>
+                {marketEnabled && (
+                  <div className="grid sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="label-base">Preço Market Zuppi</label>
+                      <input name="marketPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full"
+                        defaultValue={normalPrice > 0 ? String((normalPrice * 0.97).toFixed(2).replace(".", ",")) : ""} />
+                    </div>
+                    <div>
+                      <label className="label-base">Qtd. mínima</label>
+                      <input name="marketMinQty" inputMode="decimal" placeholder="Ex: 2" defaultValue="1" className="input-base w-full" />
+                    </div>
+                    <div>
+                      <label className="label-base">Estoque disponível (opcional)</label>
+                      <input name="marketStock" inputMode="decimal" placeholder="Opcional" className="input-base w-full" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Collective */}
+              <div className={`rounded-2xl border p-4 space-y-4 transition-colors ${collectiveEnabled ? "border-blue-200 bg-blue-50/20" : "border-gray-100"}`}>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={collectiveEnabled} onChange={e => setCollectiveEnabled(e.target.checked)} className="w-4 h-4 accent-blue-500" />
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm flex items-center gap-1.5">👥 Compra Coletiva <span className="text-[10px] font-normal text-blue-600 bg-blue-100 rounded-full px-2 py-0.5">Faixas progressivas</span></p>
+                    <p className="text-xs text-gray-500">Preço diminui conforme a meta é atingida em grupo.</p>
+                  </div>
+                </label>
+                {collectiveEnabled && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="label-base">Compra mínima por comprador (coletiva)</label>
+                      <input name="collectiveMinQty" inputMode="decimal" placeholder="Ex: 10" className="input-base w-full sm:max-w-[200px]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="label-base mb-0">Faixas progressivas de preço</label>
+                        <button type="button" onClick={addTier} className="text-xs text-blue-600 font-semibold hover:underline">+ Adicionar faixa</button>
+                      </div>
+                      <div className="overflow-auto rounded-xl border border-gray-100">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-400 w-32">% da meta</th>
+                              <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-400">Preço por unidade</th>
+                              <th className="w-8" />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {tiers.map((tier, i) => (
+                              <tr key={i}>
+                                <td className="px-3 py-2">
+                                  <input
+                                    type="number" min="1" max="100" value={tier.percentage || ""}
+                                    onChange={e => updateTier(i, "percentage", Number(e.target.value))}
+                                    className="input-base w-full text-sm" placeholder="Ex: 25"
+                                  />
+                                </td>
+                                <td className="px-3 py-2">
+                                  <input
+                                    inputMode="decimal" value={tier.price || ""}
+                                    onChange={e => updateTier(i, "price", parseDecimal(e.target.value))}
+                                    className="input-base w-full text-sm" placeholder="R$ 0,00"
+                                  />
+                                </td>
+                                <td className="px-3 py-2">
+                                  {tiers.length > 1 && (
+                                    <button type="button" onClick={() => removeTier(i)} className="text-gray-300 hover:text-red-400">
+                                      <X size={14} />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">Dica: o preço de 100% deve ser o menor de todos. O valor mais baixo das faixas ativas será o preço Zuppi exibido.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bloco 4 — Meta */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Meta</h2>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -637,7 +767,7 @@ export function SupplierCreateOfferPage() {
 
 export function SupplierOfferDetailPage() {
   const { id } = useParams();
-  const { session, suppliers, offers, reservations } = useAppState();
+  const { session, suppliers, offers, reservations, updateOfferImage } = useAppState();
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
   const supplier = suppliers.find(s => s.id === session.id);
@@ -674,6 +804,11 @@ export function SupplierOfferDetailPage() {
             <FileText size={14} /> Imprimir / PDF
           </button>
         </div>
+
+        <ProductImageUpload
+          value={offer.imageBase64 || null}
+          onChange={(base64) => updateOfferImage(offer.id, base64 || undefined)}
+        />
 
         <div className="grid sm:grid-cols-4 gap-4">
           <MetricCard title="Meta" value={formatGoal(offer, progress.target)} icon={TrendingUp} />
@@ -763,90 +898,173 @@ export function SupplierOfferDetailPage() {
 
 // ─── PRE-ORDERS (PRÉ-PEDIDOS) ─────────────────────────────────────────────────
 
-const preOrderFilters = [
-  { id: "todos", label: "Todos" },
-  { id: "aguardando_meta", label: "Aguardando meta" },
-  { id: "meta_atingida", label: "Meta atingida" },
-  { id: "confirmado", label: "Confirmado" },
-  { id: "cancelado", label: "Cancelado" },
-  { id: "entregue", label: "Concluído" },
-];
+type PreOrderTab = "todas" | "market" | "coletivas";
+
+const marketStatusLabel: Record<string, string> = {
+  ordem_gerada: "Ordem gerada",
+  fornecedor_notificado: "Notificado",
+  em_tratativa_com_fornecedor: "Em negociação",
+  venda_concluida: "Concluída",
+  cliente_nao_cumpriu: "Não cumpriu",
+  cancelada: "Cancelada",
+};
+
+const collectiveStatusLabel: Record<string, string> = {
+  aguardando_meta: "Aguardando meta",
+  intencao_registrada: "Intenção registrada",
+  faixa_atingida: "Faixa atingida",
+  meta_atingida: "Meta atingida",
+  ordem_gerada: "Ordem gerada",
+  em_tratativa_com_fornecedor: "Em negociação",
+  venda_concluida: "Concluída",
+  cliente_nao_cumpriu: "Não cumpriu",
+  cancelado: "Cancelada",
+  confirmado: "Confirmado",
+  entregue: "Concluído",
+};
 
 export function SupplierPreOrdersPage() {
-  const { session, offers, reservations } = useAppState();
-  const [filter, setFilter] = useState("todos");
+  const { session, offers, reservations, marketOrders, updateMarketOrderStatus, updateReservationStatus, updateBuyerScore } = useAppState();
+  const [tab, setTab] = useState<PreOrderTab>("todas");
 
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
   const myOfferIds = new Set(offers.filter(o => o.supplierId === session.id).map(o => o.id));
-  const myReservations = reservations.filter(r => myOfferIds.has(r.offerId));
-  const filtered = filter === "todos" ? myReservations : myReservations.filter(r => r.status === filter);
+  const myReservations = reservations.filter(r => myOfferIds.has(r.offerId) && r.purchaseMode !== "market");
+  const myMarketOrders = marketOrders.filter(o => myOfferIds.has(o.offerId));
 
-  const totalValue = myReservations.reduce((a, r) => a + r.totalAmount, 0);
-  const uniqueBuyers = new Set(myReservations.map(r => r.buyerId)).size;
-  const reachedGoal = myReservations.filter(r => ["meta_atingida", "meta_batida"].includes(r.status)).length;
+  const totalCollective = myReservations.reduce((a, r) => a + r.totalAmount, 0);
+  const totalMarket = myMarketOrders.reduce((a, o) => a + o.totalAmount, 0);
+  const uniqueBuyers = new Set([...myReservations.map(r => r.buyerId), ...myMarketOrders.map(o => o.buyerId)]).size;
+  const pendingMarket = myMarketOrders.filter(o => ["ordem_gerada", "fornecedor_notificado"].includes(o.status)).length;
+
+  const handleMarketAction = (orderId: string, buyerId: string, action: "concluir" | "nao_cumpriu" | "cancelar" | "negociar") => {
+    if (action === "concluir") { updateMarketOrderStatus(orderId, "venda_concluida"); updateBuyerScore(buyerId, true); }
+    else if (action === "nao_cumpriu") { updateMarketOrderStatus(orderId, "cliente_nao_cumpriu"); updateBuyerScore(buyerId, false); }
+    else if (action === "cancelar") updateMarketOrderStatus(orderId, "cancelada");
+    else updateMarketOrderStatus(orderId, "em_tratativa_com_fornecedor");
+  };
+
+  const handleCollectiveAction = (resId: string, buyerId: string, action: "concluir" | "nao_cumpriu" | "cancelar" | "negociar") => {
+    if (action === "concluir") { updateReservationStatus(resId, "venda_concluida"); updateBuyerScore(buyerId, true); }
+    else if (action === "nao_cumpriu") { updateReservationStatus(resId, "cliente_nao_cumpriu"); updateBuyerScore(buyerId, false); }
+    else if (action === "cancelar") updateReservationStatus(resId, "cancelado");
+    else updateReservationStatus(resId, "em_tratativa_com_fornecedor");
+  };
 
   return (
     <DashboardLayout role="supplier">
-      <div className="space-y-5 max-w-6xl">
+      <div className="space-y-5 max-w-6xl pb-24 md:pb-0">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">Pré-pedidos</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Reservas recebidas em todas as suas ofertas.</p>
+          <h1 className="text-xl font-bold text-gray-800">Ordens e intenções</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Market Zuppi e compras coletivas em andamento.</p>
         </div>
 
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <MetricCard title="Pré-pedidos totais" value={String(myReservations.length)} icon={Package} />
-          <MetricCard title="Valor potencial" value={currency(totalValue)} icon={DollarSign} />
-          <MetricCard title="Compradores interessados" value={String(uniqueBuyers)} icon={Users} />
-          <MetricCard title="Metas atingidas" value={String(reachedGoal)} icon={TrendingUp} />
+          <MetricCard title="Market Zuppi" value={String(myMarketOrders.length)} sub={`${pendingMarket} aguardando · ${currency(totalMarket)}`} icon={DollarSign} />
+          <MetricCard title="Intenções coletivas" value={String(myReservations.length)} sub={currency(totalCollective)} icon={Package} />
+          <MetricCard title="Compradores únicos" value={String(uniqueBuyers)} icon={Users} />
+          <MetricCard title="Valor total" value={currency(totalCollective + totalMarket)} sub="potencial" icon={TrendingUp} />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {preOrderFilters.map(f => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
-                filter === f.id ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200 hover:border-orange-200"
-              }`}
-            >
-              {f.label}
+        <div className="flex gap-2">
+          {(["todas", "market", "coletivas"] as PreOrderTab[]).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium border transition-colors ${tab === t ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200"}`}>
+              {t === "todas" ? "Todas" : t === "market" ? "⚡ Market" : "👥 Coletivas"}
             </button>
           ))}
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">Nenhum pré-pedido encontrado para este filtro.</div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
-            <table className="w-full min-w-[800px] text-sm">
-              <thead>
-                <tr className="border-b border-gray-50">
-                  {["Comprador", "Produto", "Quantidade", "Valor", "Status", "Data", "Ação"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map(r => (
-                  <tr key={r.id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
-                    <td className="px-4 py-3 text-gray-600">{r.product}</td>
-                    <td className="px-4 py-3">{r.quantity} {r.unit}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-700">{currency(r.totalAmount)}</td>
-                    <td className="px-4 py-3">
-                      <span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
-                    <td className="px-4 py-3">
-                      <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-orange-600 font-medium hover:underline text-xs">
-                        Ver detalhes
-                      </Link>
-                    </td>
+        {/* Market orders table */}
+        {(tab === "todas" || tab === "market") && myMarketOrders.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">⚡ Market Zuppi <span className="text-xs font-normal text-gray-400">— Ordens de compra imediata</span></h2>
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    {["Comprador", "Tipo", "Produto", "Qtd.", "Valor", "Status", "Data", "Ações"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {myMarketOrders.map(o => (
+                    <tr key={o.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 font-medium text-gray-800">{o.buyerSnapshot.companyName}</td>
+                      <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${o.buyerType === "b2c" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{o.buyerType === "b2c" ? "B2C" : "B2B"}</span></td>
+                      <td className="px-4 py-3 text-gray-600">{o.product}</td>
+                      <td className="px-4 py-3">{o.quantity} {o.unit}</td>
+                      <td className="px-4 py-3 font-semibold text-orange-600">{currency(o.totalAmount)}</td>
+                      <td className="px-4 py-3"><span className="badge-ativa text-xs">{marketStatusLabel[o.status] || o.status}</span></td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</td>
+                      <td className="px-4 py-3">
+                        {!["venda_concluida", "cliente_nao_cumpriu", "cancelada"].includes(o.status) && (
+                          <div className="flex gap-1 flex-wrap">
+                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "negociar")} className="text-[10px] border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">Em negociação</button>
+                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "concluir")} className="text-[10px] border border-green-200 text-green-700 rounded-lg px-2 py-1 hover:bg-green-50">Concluir</button>
+                            <button onClick={() => handleMarketAction(o.id, o.buyerId, "nao_cumpriu")} className="text-[10px] border border-red-200 text-red-600 rounded-lg px-2 py-1 hover:bg-red-50">Não cumpriu</button>
+                          </div>
+                        )}
+                        {["venda_concluida"].includes(o.status) && <span className="text-xs text-green-600 font-semibold">✓ Concluída</span>}
+                        {["cliente_nao_cumpriu", "cancelada"].includes(o.status) && <span className="text-xs text-red-500">✗ Encerrada</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Collective intents table */}
+        {(tab === "todas" || tab === "coletivas") && myReservations.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">👥 Intenções coletivas <span className="text-xs font-normal text-gray-400">— Aguardando meta ou prazo</span></h2>
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    {["Comprador", "Tipo", "Produto", "Qtd.", "Valor est.", "Status", "Data", "Ações"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {myReservations.map(r => (
+                    <tr key={r.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 font-medium text-gray-800">{r.buyerSnapshot.companyName}</td>
+                      <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.buyerType === "b2c" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{r.buyerType === "b2c" ? "B2C" : "B2B"}</span></td>
+                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
+                      <td className="px-4 py-3">{r.quantity} {r.unit}</td>
+                      <td className="px-4 py-3 font-semibold text-blue-600">{currency(r.totalAmount)}</td>
+                      <td className="px-4 py-3"><span className="badge-aguardando_aprovacao text-xs">{collectiveStatusLabel[r.status] || r.status}</span></td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
+                      <td className="px-4 py-3">
+                        {["ordem_gerada", "em_tratativa_com_fornecedor"].includes(r.status) && (
+                          <div className="flex gap-1 flex-wrap">
+                            <button onClick={() => handleCollectiveAction(r.id, r.buyerId, "concluir")} className="text-[10px] border border-green-200 text-green-700 rounded-lg px-2 py-1 hover:bg-green-50">Concluir</button>
+                            <button onClick={() => handleCollectiveAction(r.id, r.buyerId, "nao_cumpriu")} className="text-[10px] border border-red-200 text-red-600 rounded-lg px-2 py-1 hover:bg-red-50">Não cumpriu</button>
+                          </div>
+                        )}
+                        {["venda_concluida", "confirmado", "entregue"].includes(r.status) && <span className="text-xs text-green-600 font-semibold">✓ Concluída</span>}
+                        {["cliente_nao_cumpriu", "cancelado"].includes(r.status) && <span className="text-xs text-red-500">✗ Encerrada</span>}
+                        {!["ordem_gerada", "em_tratativa_com_fornecedor", "venda_concluida", "confirmado", "entregue", "cliente_nao_cumpriu", "cancelado"].includes(r.status) && (
+                          <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-orange-600 text-xs font-medium hover:underline">Ver</Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {myMarketOrders.length === 0 && myReservations.length === 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
+            Nenhuma ordem ou intenção encontrada. <Link to="/fornecedor/criar-oferta" className="text-orange-600 font-semibold hover:underline ml-1">Criar oferta</Link>
           </div>
         )}
       </div>
