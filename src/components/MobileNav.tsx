@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Tag, ShoppingCart, User, MoreHorizontal,
+  LayoutDashboard, ShoppingCart, Users, Zap,
   Package, BarChart2, X, PlusCircle, Sliders, Settings,
-  LogOut, HelpCircle, Crown,
+  LogOut, HelpCircle, Plus, MoreHorizontal,
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
 
@@ -57,9 +57,9 @@ export function MobileNav() {
     <>
       {/* Drawer "Mais" */}
       {showMore && (
-        <div className="fixed inset-0 z-40 flex flex-col justify-end md:hidden">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowMore(false)} />
-          <div className="relative bg-white rounded-t-2xl pb-28 z-50">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMore(false)} />
+          <div className="relative bg-white rounded-t-2xl z-50" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}>
             <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
               <span className="text-sm font-bold text-gray-700">Menu</span>
               <button onClick={() => setShowMore(false)} className="p-1">
@@ -69,17 +69,24 @@ export function MobileNav() {
             <div className="p-2">
               {session.role === "buyer" ? (
                 <>
-                  <DrawerLink to="/ofertas" icon={Tag} label="Ofertas abertas" />
+                  <DrawerLink to="/comprador/relatorio" icon={BarChart2} label="Relatórios" />
                   <DrawerLink to="/configuracoes" icon={Settings} label="Configurações" />
-                  <DrawerLink to="/tutorial" icon={HelpCircle} label="Suporte / Tutorial" />
+                  <a
+                    href="https://wa.me/5500000000000"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowMore(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <HelpCircle size={18} className="text-gray-500 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700">Suporte</span>
+                  </a>
                 </>
               ) : (
                 <>
                   <DrawerLink to="/fornecedor/criar-oferta" icon={PlusCircle} label="Criar oferta" />
                   <DrawerLink to="/fornecedor/simulador" icon={Sliders} label="Simulador" />
-                  <DrawerLink to="/configuracoes" icon={Crown} label="Meu plano" />
                   <DrawerLink to="/configuracoes" icon={Settings} label="Configurações" />
-                  <DrawerLink to="/tutorial" icon={HelpCircle} label="Suporte" />
                 </>
               )}
               <button
@@ -94,32 +101,36 @@ export function MobileNav() {
         </div>
       )}
 
-      {/* Botão flutuante criar oferta (fornecedor) */}
+      {/* Botão flutuante "+" para supplier */}
       {session.role === "supplier" && !showMore && (
         <Link
           to="/fornecedor/criar-oferta"
-          className="fixed bottom-20 right-4 z-30 md:hidden w-12 h-12 rounded-full bg-orange-500 shadow-lg flex items-center justify-center"
+          className="fixed z-40 md:hidden w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center"
+          style={{ bottom: "88px", right: "16px" }}
         >
-          <PlusCircle size={22} className="text-white" />
+          <Plus size={24} />
         </Link>
       )}
 
       {/* Bottom nav bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-1px_8px_rgba(0,0,0,0.06)] z-30 safe-area-bottom">
-        <div className="flex items-stretch">
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] z-50"
+        style={{ height: "72px", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex items-stretch h-full">
           {session.role === "buyer" ? (
             <>
               <NavItem to="/comprador" icon={LayoutDashboard} label="Início" exact />
-              <NavItem to="/ofertas" icon={Tag} label="Ofertas" />
+              <NavItem to="/comprador/market" icon={Zap} label="Market" />
+              <NavItem to="/comprador/compra-coletiva" icon={Users} label="Coletiva" />
               <NavItem to="/comprador/minhas-compras" icon={ShoppingCart} label="Compras" />
-              <NavItem to="/dados-cadastrais" icon={User} label="Perfil" />
               <MoreBtn />
             </>
           ) : (
             <>
               <NavItem to="/fornecedor" icon={LayoutDashboard} label="Início" exact />
               <NavItem to="/fornecedor/ofertas" icon={Package} label="Ofertas" />
-              <NavItem to="/fornecedor/pre-pedidos" icon={ShoppingCart} label="Ordens" />
+              <NavItem to="/fornecedor/pedidos" icon={ShoppingCart} label="Pedidos" />
               <NavItem to="/fornecedor/relatorio-compras" icon={BarChart2} label="Relatórios" />
               <MoreBtn />
             </>

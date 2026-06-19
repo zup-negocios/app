@@ -58,21 +58,37 @@ function MetricCard({ title, value, sub, icon: Icon }: {
 export function SupplierDashboardPage() {
   const { session, suppliers, offers, reservations, marketOrders } = useAppState();
   const navigate = useNavigate();
+  const [dashMonth, setDashMonth] = useState("all");
+
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
   const supplier = suppliers.find(s => s.id === session.id);
   const myOffers = offers.filter(o => o.supplierId === session.id);
   const myOfferIds = new Set(myOffers.map(o => o.id));
-  const myReservations = reservations.filter(r => myOfferIds.has(r.offerId));
-  const myMarketOrders = marketOrders.filter(o => myOfferIds.has(o.offerId));
 
-  const activeOffers = myOffers.filter(o => ["ativa", "aberta"].includes(o.status)).length;
+  const allMyReservations = reservations.filter(r => myOfferIds.has(r.offerId));
+  const allMyMarketOrders = marketOrders.filter(o => myOfferIds.has(o.offerId));
+
+  const myReservations = dashMonth === "all"
+    ? allMyReservations
+    : allMyReservations.filter(r => r.createdAt.startsWith(dashMonth));
+  const myMarketOrders = dashMonth === "all"
+    ? allMyMarketOrders
+    : allMyMarketOrders.filter(o => o.createdAt.startsWith(dashMonth));
+
+  const activeOffersCount = myOffers.filter(o => ["ativa", "aberta"].includes(o.status)).length;
   const reachedOffers = myOffers.filter(o => o.status === "meta_atingida").length;
   const totalReservedAmount = myReservations.reduce((a, r) => a + r.totalAmount, 0);
   const marketOrdersValue = myMarketOrders.reduce((a, o) => a + o.totalAmount, 0);
-  const uniqueBuyers = new Set([...myReservations.map(r => r.buyerId), ...myMarketOrders.map(o => o.buyerId)]).size;
+  const collectiveReservations = myReservations.filter(r => r.purchaseMode === "collective");
+  const concludedReservations = allMyReservations.filter(r => r.status === "venda_concluida");
+  const concludedMarket = allMyMarketOrders.filter(o => o.status === "venda_concluida");
+  const concludedCount = concludedReservations.length + concludedMarket.length;
+  const potentialValue = totalReservedAmount + marketOrdersValue;
   const waiting = myReservations.filter(r => ["aguardando_meta", "em_andamento"].includes(r.status)).length;
   const pendingMarket = myMarketOrders.filter(o => ["ordem_gerada", "fornecedor_notificado"].includes(o.status)).length;
+  const marketInNegotiation = myMarketOrders.filter(o => o.status === "em_tratativa_com_fornecedor").length;
+  const marketConcluded = myMarketOrders.filter(o => o.status === "venda_concluida").length;
 
   // Priorities (max 3)
   const priorities = useMemo(() => {
@@ -84,63 +100,136 @@ export function SupplierDashboardPage() {
 
     for (const { offer, progress } of sortedByProgress) {
       if (items.length >= 2) break;
-      if (progress.percent >= 70 && progress.percent < 100) {
-        const missingLabel = offer.targetType === "amount" ? currency(progress.missing) : `${progress.missing.toLocaleString("pt-BR")} ${offer.unit}`;
-        items.push({ id: offer.id, text: `${offer.product} está com ${progress.percent}% da meta atingida. Faltam ${missingLabel}.`, cta: "Ver oferta", href: `/fornecedor/ofertas/${offer.id}` });
+      if (progress.percent >= 75 && progress.percent < 100) {
+        const missingLabel = offer.targetType === "amount"
+          ? currency(progress.missing)
+          : `${progress.missing.toLocaleString("pt-BR")} ${offer.unit}`;
+        items.push({ id: offer.id, text: `${offer.product} está com ${progress.percent}% da meta. Faltam ${missingLabel}.`, cta: "Ver oferta", href: `/fornecedor/ofertas/${offer.id}` });
       }
     }
-    const lowTraction = sortedByProgress.find(({ progress }) => progress.percent < 30);
+    if (pendingMarket > 0 && items.length < 3) {
+      items.push({ id: "pending-market", text: `${pendingMarket} ordem(s) Market aguardando resposta.`, cta: "Ver pedidos", href: "/fornecedor/pedidos" });
+    }
+    const lowTraction = sortedByProgress.find(({ progress }) => progress.percent < 25);
     if (lowTraction && items.length < 3) {
       items.push({ id: `low-${lowTraction.offer.id}`, text: `${lowTraction.offer.product} tem baixa tração. Revise preço, foto ou prazo.`, cta: "Editar oferta", href: `/fornecedor/ofertas/${lowTraction.offer.id}?edit=1` });
     }
     if (waiting > 0 && items.length < 3) {
-      items.push({ id: "waiting", text: `Você recebeu ${waiting} pré-pedido(s) aguardando meta.`, cta: "Ver pré-pedidos", href: "/fornecedor/pre-pedidos" });
+      items.push({ id: "waiting", text: `Você recebeu ${waiting} pedido(s) aguardando meta.`, cta: "Ver pedidos", href: "/fornecedor/pedidos" });
     }
     return items.slice(0, 3);
-  }, [myOffers, waiting]);
+  }, [myOffers, waiting, pendingMarket]);
 
   const recentOffers = myOffers.slice(0, 5);
-  const recentReservations = [...myReservations]
-    .filter(r => r.purchaseMode !== "market")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+
+  // Recent orders: mix market + collective, last 5
+  const recentOrders = useMemo(() => {
+    const collective = myReservations
+      .filter(r => r.purchaseMode === "collective")
+      .map(r => ({ type: "collective" as const, item: r, date: r.createdAt }));
+    const market = myMarketOrders
+      .map(o => ({ type: "market" as const, item: o, date: o.createdAt }));
+    return [...collective, ...market]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [myReservations, myMarketOrders]);
+
+  const reservationStatusColors: Record<string, string> = {
+    reservado: "bg-blue-100 text-blue-700",
+    aguardando_meta: "bg-yellow-100 text-yellow-700",
+    em_andamento: "bg-yellow-100 text-yellow-700",
+    meta_atingida: "bg-green-100 text-green-700",
+    meta_batida: "bg-green-100 text-green-700",
+    confirmado: "bg-green-100 text-green-700",
+    entregue: "bg-gray-100 text-gray-600",
+    venda_concluida: "bg-emerald-100 text-emerald-700",
+    cancelado: "bg-red-100 text-red-700",
+  };
+  const marketStatusColors: Record<string, string> = {
+    ordem_gerada: "bg-yellow-100 text-yellow-700",
+    fornecedor_notificado: "bg-orange-100 text-orange-700",
+    em_tratativa_com_fornecedor: "bg-blue-100 text-blue-700",
+    venda_concluida: "bg-emerald-100 text-emerald-700",
+    cancelada: "bg-red-100 text-red-700",
+    cliente_nao_cumpriu: "bg-gray-100 text-gray-600",
+  };
+
+  const planoLabel = supplier?.planoFornecedor === "assinante" ? "Assinante" : "Gratuito";
 
   return (
     <DashboardLayout role="supplier">
-      <div className="space-y-8 max-w-6xl">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="space-y-6 max-w-6xl pb-24 md:pb-0">
+
+        {/* Cabeçalho executivo */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-2xl font-black text-gray-900">
               Olá, {supplier?.contactName?.split(" ")[0] || "fornecedor"}!
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">
-              {supplier?.companyName} · Plano <span className="font-medium text-gray-600 capitalize">{supplier?.planoFornecedor === "assinante" ? "Assinante" : "Gratuito"}</span>
+              {supplier?.companyName} · Plano <span className="font-semibold text-gray-600">{planoLabel}</span>
             </p>
           </div>
-          <button className="btn-primary" onClick={() => navigate("/fornecedor/criar-oferta")}>
-            <PlusCircle size={16} /> Nova oferta
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              value={dashMonth}
+              onChange={e => setDashMonth(e.target.value)}
+              className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 bg-white"
+            >
+              {getMonthOptions().map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+            <button className="btn-primary" onClick={() => navigate("/fornecedor/criar-oferta")}>
+              <PlusCircle size={16} /> Nova oferta
+            </button>
+          </div>
         </div>
 
-        {/* Main metrics */}
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <MetricCard title="Ofertas ativas" value={String(activeOffers)} sub={`${reachedOffers} meta(s) atingida(s)`} icon={TrendingUp} />
-          <MetricCard title="Coletivas" value={String(myReservations.length)} sub={`Intenções · ${currency(totalReservedAmount)}`} icon={Users} />
-          <MetricCard title="Market Zuppi" value={String(myMarketOrders.length)} sub={`${pendingMarket} aguardando · ${currency(marketOrdersValue)}`} icon={DollarSign} />
-          <MetricCard title="Compradores únicos" value={String(uniqueBuyers)} sub="participantes ativos" icon={Package} />
+        {/* 5 cards principais */}
+        <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+          <MetricCard
+            title="Ofertas ativas"
+            value={String(activeOffersCount)}
+            sub={`${reachedOffers} meta(s) atingida(s)`}
+            icon={TrendingUp}
+          />
+          <MetricCard
+            title="Ordens Market"
+            value={String(myMarketOrders.length)}
+            sub={currency(marketOrdersValue)}
+            icon={DollarSign}
+          />
+          <MetricCard
+            title="Coletivas"
+            value={String(collectiveReservations.length)}
+            sub={currency(totalReservedAmount)}
+            icon={Users}
+          />
+          <MetricCard
+            title="Vendas concluídas"
+            value={String(concludedCount)}
+            sub={`Market + Coletiva`}
+            icon={CheckCircle}
+          />
+          <MetricCard
+            title="Valor potencial"
+            value={currency(potentialValue)}
+            sub="Market + Coletiva"
+            icon={TrendingUp}
+          />
         </div>
 
-        {/* Alert market orders */}
+        {/* Alerta market pendente */}
         {pendingMarket > 0 && (
           <div className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3">
             <span className="text-orange-500 font-bold text-sm">⚡</span>
-            <p className="text-sm text-orange-700 font-medium">Você tem <b>{pendingMarket}</b> ordem(s) Market Zuppi aguardando sua atenção.</p>
-            <Link to="/fornecedor/pre-pedidos" className="ml-auto text-xs font-bold text-orange-600 hover:underline">Ver agora</Link>
+            <p className="text-sm text-orange-700 font-medium">Você tem <b>{pendingMarket}</b> ordem(s) Market aguardando sua atenção.</p>
+            <Link to="/fornecedor/pedidos" className="ml-auto text-xs font-bold text-orange-600 hover:underline whitespace-nowrap">Ver agora</Link>
           </div>
         )}
 
-        {/* Priorities of the day */}
+        {/* Prioridades do dia */}
         {priorities.length > 0 && (
           <section>
             <h2 className="text-sm font-bold text-gray-700 mb-3">Prioridades do dia</h2>
@@ -160,7 +249,35 @@ export function SupplierDashboardPage() {
           </section>
         )}
 
-        {/* My Offers — compact table */}
+        {/* Resumo Market × Coletiva */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Market</span>
+              <h3 className="font-bold text-gray-700 text-sm">Resumo Market</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">Ordens geradas</span><span className="font-semibold text-gray-800">{myMarketOrders.filter(o => o.status === "ordem_gerada").length}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Concluídas</span><span className="font-semibold text-green-600">{marketConcluded}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Em negociação</span><span className="font-semibold text-blue-600">{marketInNegotiation}</span></div>
+              <div className="flex justify-between pt-2 border-t border-gray-50"><span className="text-gray-500">Valor total</span><span className="font-bold text-orange-600">{currency(marketOrdersValue)}</span></div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Coletiva</span>
+              <h3 className="font-bold text-gray-700 text-sm">Resumo Coletiva</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">Intenções</span><span className="font-semibold text-gray-800">{collectiveReservations.length}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Metas atingidas</span><span className="font-semibold text-green-600">{reachedOffers}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Aguardando meta</span><span className="font-semibold text-yellow-600">{waiting}</span></div>
+              <div className="flex justify-between pt-2 border-t border-gray-50"><span className="text-gray-500">Valor potencial</span><span className="font-bold text-blue-600">{currency(totalReservedAmount)}</span></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabela Minhas ofertas */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-gray-700">Minhas ofertas</h2>
@@ -182,7 +299,7 @@ export function SupplierDashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-50">
-                    {["Produto", "Status", "Reservado", "Progresso", "Prazo", ""].map(h => (
+                    {["Produto", "Modalidade", "Status", "Reservado", "Progresso", "Prazo", ""].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -190,8 +307,10 @@ export function SupplierDashboardPage() {
                 <tbody className="divide-y divide-gray-50">
                   {recentOffers.map(offer => {
                     const progress = offerProgress(offer);
-                    const offerRes = myReservations.filter(r => r.offerId === offer.id);
+                    const offerRes = allMyReservations.filter(r => r.offerId === offer.id);
                     const daysLeft = Math.max(0, Math.ceil((new Date(`${offer.deadline}T23:59:59`).getTime() - Date.now()) / 86400000));
+                    const hasMarket = offer.marketSaleEnabled === true;
+                    const hasCollective = offer.collectiveSaleEnabled === true;
                     return (
                       <tr key={offer.id} className="hover:bg-gray-50/50">
                         <td className="px-4 py-3">
@@ -203,8 +322,14 @@ export function SupplierDashboardPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-gray-800 truncate">{offer.product}</p>
-                              <p className="text-[11px] text-gray-400 truncate">{supplier?.companyName} · {offer.category}</p>
+                              <p className="text-[11px] text-gray-400">{offer.category}</p>
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1 flex-wrap">
+                            {hasMarket && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">Market</span>}
+                            {hasCollective && <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Coletiva</span>}
                           </div>
                         </td>
                         <td className="px-4 py-3"><span className={statusColors[offer.status] || "badge-rascunho"}>{offer.status.replace(/_/g, " ")}</span></td>
@@ -217,7 +342,7 @@ export function SupplierDashboardPage() {
                             <span className="text-[11px] text-gray-400">{progress.percent}%</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{daysLeft} dias</td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{daysLeft}d</td>
                         <td className="px-4 py-3 text-right">
                           <Link to={`/fornecedor/ofertas/${offer.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-400">
                             <Eye size={14} />
@@ -232,45 +357,68 @@ export function SupplierDashboardPage() {
           )}
         </section>
 
-        {/* Recent pre-orders — compact table */}
+        {/* Pedidos recentes — Market + Coletiva misturados */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-gray-700">Pré-pedidos recentes</h2>
-            <Link to="/fornecedor/pre-pedidos" className="text-xs text-orange-500 font-semibold hover:text-orange-600">
+            <h2 className="text-sm font-bold text-gray-700">Pedidos recentes</h2>
+            <Link to="/fornecedor/pedidos" className="text-xs text-orange-500 font-semibold hover:text-orange-600">
               Ver todos
             </Link>
           </div>
 
-          {recentReservations.length === 0 ? (
+          {recentOrders.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm">
-              Nenhum pré-pedido recebido ainda.
+              Nenhum pedido recebido ainda.
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-50">
-                    {["Empresa", "Produto", "Qtd.", "Valor", "Status", ""].map(h => (
+                    {["Cliente", "Tipo", "Produto", "Valor", "Status", ""].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {recentReservations.map(r => (
-                    <tr key={r.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-800">{r.buyerSnapshot.companyName}</p>
-                        <p className="text-[11px] text-gray-400">{r.buyerSnapshot.city}</p>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{r.product}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.quantity.toLocaleString("pt-BR")} {r.unit}</td>
-                      <td className="px-4 py-3 font-medium text-gray-700">{currency(r.totalAmount)}</td>
-                      <td className="px-4 py-3"><span className="badge-ativa text-xs">{reservationLabel[r.status] || r.status}</span></td>
-                      <td className="px-4 py-3 text-right">
-                        <Link to={`/fornecedor/pre-pedidos/${r.id}`} className="text-xs font-semibold text-orange-500 hover:text-orange-600">Ver</Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {recentOrders.map(entry => {
+                    const isCollective = entry.type === "collective";
+                    const item = entry.item;
+                    const companyName = item.buyerSnapshot.companyName;
+                    const city = item.buyerSnapshot.city;
+                    const product = item.product;
+                    const totalAmount = item.totalAmount;
+                    const status = item.status;
+                    const statusColor = isCollective
+                      ? (reservationStatusColors[status] ?? "bg-gray-100 text-gray-600")
+                      : (marketStatusColors[status] ?? "bg-gray-100 text-gray-600");
+                    const href = isCollective
+                      ? `/fornecedor/pedidos/${item.id}`
+                      : `/fornecedor/pedidos/${item.id}`;
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-800">{companyName}</p>
+                          <p className="text-[11px] text-gray-400">{city}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          {isCollective
+                            ? <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Coletiva</span>
+                            : <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">Market</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 truncate max-w-[120px]">{product}</td>
+                        <td className="px-4 py-3 font-medium text-gray-700">{currency(totalAmount)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${statusColor}`}>
+                            {status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link to={href} className="text-xs font-semibold text-orange-500 hover:text-orange-600">Ver</Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -841,7 +989,7 @@ export function SupplierOfferDetailPage() {
 
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">Pré-pedidos da oferta</h2>
+            <h2 className="text-lg font-bold text-gray-800">Pedidos da oferta</h2>
             <span className="text-sm text-gray-500">{offerRes.length} reserva(s)</span>
           </div>
 

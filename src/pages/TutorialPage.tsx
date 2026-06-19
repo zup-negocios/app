@@ -5,7 +5,7 @@ import { useAppState } from "../components/AppProvider";
 const buyerSteps = [
   "Entre em Ofertas abertas e filtre por categoria ou prazo.",
   "Abra uma oferta para ver compra minima, cronometro, meta e reputacao do fornecedor.",
-  "Reserve uma quantidade valida para gerar um pre-pedido.",
+  "Reserve uma quantidade valida para gerar um pedido.",
   "Acompanhe tudo em Ofertas participando e Meus pedidos.",
   "Depois da operacao, avalie o fornecedor para reduzir riscos futuros.",
 ];
@@ -13,7 +13,7 @@ const buyerSteps = [
 const supplierSteps = [
   "Crie uma oferta com prazo maximo de 3 dias, compra minima e meta clara.",
   "Acompanhe disponibilidade, compradores e total reservado no painel.",
-  "Abra a oferta para ver pre-pedidos e gerar relatorio imprimivel.",
+  "Abra a oferta para ver pedidos e gerar relatorio imprimivel.",
   "Use Relatorio de clientes e Relatorio de compras para medir demanda.",
   "Avalie compradores para sinalizar confiabilidade para novas ofertas.",
 ];

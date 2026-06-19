@@ -80,7 +80,7 @@ export function AdminPage() {
         </section>
 
         <section className="card p-4">
-          <h2 className="font-bold mb-2">Reservas e pre-pedidos</h2>
+          <h2 className="font-bold mb-2">Reservas e pedidos</h2>
           <div className="grid gap-2">
             {reservations.map((reservation) => (
               <div key={reservation.id} className="text-sm border-b last:border-0 py-2">

@@ -152,7 +152,7 @@ export function SupplierOffersPage() {
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
                               <div className="absolute right-4 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 text-left">
-                                <Link to="/fornecedor/pre-pedidos" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver pré-pedidos</Link>
+                                <Link to="/fornecedor/pedidos" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver pedidos</Link>
                                 <button
                                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                   onClick={() => {
@@ -241,8 +241,8 @@ export function SupplierPreOrderDetailPage() {
     return (
       <DashboardLayout role="supplier">
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-          <p className="text-gray-400">Pré-pedido não encontrado.</p>
-          <Link to="/fornecedor/pre-pedidos" className="btn-primary mt-4 mx-auto">Voltar</Link>
+          <p className="text-gray-400">Pedido não encontrado.</p>
+          <Link to="/fornecedor/pedidos" className="btn-primary mt-4 mx-auto">Voltar</Link>
         </div>
       </DashboardLayout>
     );
@@ -254,8 +254,8 @@ export function SupplierPreOrderDetailPage() {
   return (
     <DashboardLayout role="supplier">
       <div className="max-w-3xl space-y-5">
-        <button onClick={() => navigate("/fornecedor/pre-pedidos")} className="text-sm text-gray-500 hover:text-orange-600">
-          ← Voltar para pré-pedidos
+        <button onClick={() => navigate("/fornecedor/pedidos")} className="text-sm text-gray-500 hover:text-orange-600">
+          ← Voltar para pedidos
         </button>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5">

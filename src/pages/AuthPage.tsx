@@ -66,12 +66,12 @@ export function AuthPage() {
             <div>
               <p className="text-sm font-semibold text-orange-700 uppercase">Area do comprador</p>
               <h1 className="text-3xl font-bold">Entrar para comprar melhor em grupo</h1>
-              <p className="text-gray-700 mt-2">Use este acesso para ver ofertas ativas, reservar quantidades, acompanhar metas e consultar seus pre-pedidos.</p>
+              <p className="text-gray-700 mt-2">Use este acesso para ver ofertas ativas, reservar quantidades, acompanhar metas e consultar seus pedidos.</p>
             </div>
             <div className="grid gap-3 text-sm">
               <p className="flex gap-2"><Building2 className="text-orange-600 shrink-0" size={18} /> Dashboard com ofertas abertas e categorias</p>
               <p className="flex gap-2"><PackageCheck className="text-orange-600 shrink-0" size={18} /> Validacao de compra minima por oferta</p>
-              <p className="flex gap-2"><FileText className="text-orange-600 shrink-0" size={18} /> Meus pedidos com pre-pedidos e valores totais</p>
+              <p className="flex gap-2"><FileText className="text-orange-600 shrink-0" size={18} /> Meus pedidos e valores totais</p>
             </div>
             <div className="bg-white rounded-xl p-3 text-sm border border-orange-100">
               Demo comprador: <b>joao@bompreco.com</b> / <b>123456</b>
@@ -123,7 +123,7 @@ export function AuthPage() {
           <div>
             <p className="text-sm font-semibold text-orange-400 uppercase">Area do fornecedor</p>
             <h1 className="text-3xl font-bold">Entrar para vender por volume</h1>
-            <p className="text-gray-300 mt-2">Use este acesso para criar ofertas, acompanhar metas, ver pre-pedidos e gerar relatorios de compradores interessados.</p>
+            <p className="text-gray-300 mt-2">Use este acesso para criar ofertas, acompanhar metas, ver pedidos e gerar relatorios de compradores interessados.</p>
           </div>
           <div className="grid gap-3 text-sm text-gray-200">
             <p className="flex gap-2"><Factory className="text-orange-400 shrink-0" size={18} /> Cadastro de ofertas com meta e prazo</p>

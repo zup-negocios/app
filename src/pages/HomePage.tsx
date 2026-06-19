@@ -56,7 +56,7 @@ const STEPS = [
 
 const BUYER_BENEFITS = [
   { icon: TrendingDown, title: "Preços até 40% menores", desc: "Preços de atacado sem precisar comprar em grandes volumes sozinho." },
-  { icon: Shield, title: "Compra organizada e segura", desc: "Pré-pedidos documentados, fornecedores verificados pela Zuppi." },
+  { icon: Shield, title: "Compra organizada e segura", desc: "Pedidos documentados, fornecedores verificados pela Zuppi." },
   { icon: Clock, title: "Oferta por tempo limitado", desc: "Aproveite enquanto a meta não é atingida." },
   { icon: Store, title: "Ideal para pequenos negócios", desc: "Padarias, restaurantes, petshops e muito mais." },
 ];

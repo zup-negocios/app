@@ -24,7 +24,7 @@ export function LoginChoice() {
           <div className="grid gap-2 text-sm text-gray-700">
             <p className="flex gap-2"><Handshake size={18} className="text-orange-600 shrink-0" /> Ver ofertas ativas de fornecedores aprovados</p>
             <p className="flex gap-2"><ChartNoAxesCombined size={18} className="text-orange-600 shrink-0" /> Acompanhar meta, economia e prazo</p>
-            <p className="flex gap-2"><Boxes size={18} className="text-orange-600 shrink-0" /> Gerar pre-pedidos em Meus pedidos</p>
+            <p className="flex gap-2"><Boxes size={18} className="text-orange-600 shrink-0" /> Gerar pedidos em Meus pedidos</p>
           </div>
           <button className="btn-primary w-full flex items-center justify-center gap-2 py-3" onClick={() => navigate("?type=buyer")}>
             Acessar como comprador <ArrowRight size={18} />
@@ -41,7 +41,7 @@ export function LoginChoice() {
           </div>
           <div className="grid gap-2 text-sm text-gray-700">
             <p className="flex gap-2"><Boxes size={18} className="text-gray-900 shrink-0" /> Criar ofertas com meta e compra minima</p>
-            <p className="flex gap-2"><ChartNoAxesCombined size={18} className="text-gray-900 shrink-0" /> Ver pre-pedidos, progresso e compradores</p>
+            <p className="flex gap-2"><ChartNoAxesCombined size={18} className="text-gray-900 shrink-0" /> Ver pedidos, progresso e compradores</p>
             <p className="flex gap-2"><Handshake size={18} className="text-gray-900 shrink-0" /> Gerar relatorio de compradores interessados</p>
           </div>
           <button className="btn-secondary w-full flex items-center justify-center gap-2 py-3" onClick={() => navigate("?type=supplier")}>

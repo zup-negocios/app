@@ -332,7 +332,7 @@ export function GestaoPage() {
           {section === "negociacoes" && (
             <div className="card">
               <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-800">Negociações / Pré-pedidos</h3>
+                <h3 className="font-bold text-gray-800">Negociações / Pedidos</h3>
                 <p className="text-xs text-gray-400 mt-0.5">{reservations.length} no total · {currency(reservations.reduce((a,r)=>a+r.totalAmount,0))} em negociação</p>
               </div>
               <div className="overflow-auto">
@@ -366,7 +366,7 @@ export function GestaoPage() {
                 { label: "Volume total reservado", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)), color: "text-orange-600" },
                 { label: "Projeção de conversão (80%)", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)*0.8), color: "text-gray-800" },
                 { label: "Receita estimada Zuppi (2,5%)", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)*0.8*0.025), color: "text-green-600" },
-                { label: "Ticket médio por pré-pedido", value: reservations.length ? currency(reservations.reduce((a,r)=>a+r.totalAmount,0)/reservations.length) : "—", color: "text-gray-800" },
+                { label: "Ticket médio por pedido", value: reservations.length ? currency(reservations.reduce((a,r)=>a+r.totalAmount,0)/reservations.length) : "—", color: "text-gray-800" },
               ].map(({label,value,color})=>(
                 <div key={label} className="card p-5 flex items-center justify-between">
                   <p className="text-sm text-gray-600">{label}</p>
@@ -400,14 +400,14 @@ export function GestaoPage() {
 
                 <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                   <KpiCard title="Volume negociado" value={currency(monthTotal)} icon={DollarSign} color="orange" />
-                  <KpiCard title="Pré-pedidos no mês" value={monthReservations.length} icon={ShoppingCart} color="purple" />
+                  <KpiCard title="Pedidos no mês" value={monthReservations.length} icon={ShoppingCart} color="purple" />
                   <KpiCard title="Compradores ativos" value={monthBuyers} icon={Users} color="blue" />
                   <KpiCard title="Fornecedores com ofertas novas" value={monthSuppliers} icon={Building2} color="green" />
                 </div>
 
                 <div className="card">
                   <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-800">Pré-pedidos em {monthLabel(reportMonth)}</h3>
+                    <h3 className="font-bold text-gray-800">Pedidos em {monthLabel(reportMonth)}</h3>
                   </div>
                   <div className="overflow-auto">
                     <table className="w-full text-sm">
@@ -418,7 +418,7 @@ export function GestaoPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {monthReservations.length === 0 ? (
-                          <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Nenhum pré-pedido neste mês.</td></tr>
+                          <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Nenhum pedido neste mês.</td></tr>
                         ) : monthReservations.map(r => {
                           const sup = suppliers.find(s => s.id === r.supplierId);
                           return (
@@ -659,7 +659,7 @@ export function GestaoPage() {
           {/* Recent reservations */}
           <div className="card">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-800">Pré-pedidos recentes</h3>
+              <h3 className="font-bold text-gray-800">Pedidos recentes</h3>
               <span className="text-xs text-gray-400">{reservations.length} no total</span>
             </div>
             <div className="overflow-auto">
