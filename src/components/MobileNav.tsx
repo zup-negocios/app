@@ -24,10 +24,10 @@ export function MobileNav() {
       <Link
         to={to}
         onClick={() => setShowMore(false)}
-        className="flex flex-col items-center gap-0.5 flex-1 py-2 min-w-0"
+        className="flex flex-col items-center justify-center gap-1 flex-1 py-2 min-w-0"
       >
-        <Icon size={22} className={active ? "text-orange-500" : "text-gray-400"} />
-        <span className={`text-[10px] font-medium truncate ${active ? "text-orange-500" : "text-gray-400"}`}>{label}</span>
+        <Icon size={24} className={active ? "text-orange-500" : "text-gray-400"} />
+        <span className={`text-[10px] font-semibold truncate ${active ? "text-orange-500" : "text-gray-400"}`}>{label}</span>
       </Link>
     );
   };
@@ -35,10 +35,10 @@ export function MobileNav() {
   const MoreBtn = () => (
     <button
       onClick={() => setShowMore(!showMore)}
-      className="flex flex-col items-center gap-0.5 flex-1 py-2"
+      className="flex flex-col items-center justify-center gap-1 flex-1 py-2"
     >
-      <MoreHorizontal size={22} className={showMore ? "text-orange-500" : "text-gray-400"} />
-      <span className={`text-[10px] font-medium ${showMore ? "text-orange-500" : "text-gray-400"}`}>Mais</span>
+      <MoreHorizontal size={24} className={showMore ? "text-orange-500" : "text-gray-400"} />
+      <span className={`text-[10px] font-semibold ${showMore ? "text-orange-500" : "text-gray-400"}`}>Mais</span>
     </button>
   );
 
@@ -59,7 +59,7 @@ export function MobileNav() {
       {showMore && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowMore(false)} />
-          <div className="relative bg-white rounded-t-2xl z-50" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}>
+          <div className="relative bg-white rounded-t-2xl z-50" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
             <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100">
               <span className="text-sm font-bold text-gray-700">Menu</span>
               <button onClick={() => setShowMore(false)} className="p-1">
@@ -106,7 +106,7 @@ export function MobileNav() {
         <Link
           to="/fornecedor/criar-oferta"
           className="fixed z-40 md:hidden w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center"
-          style={{ bottom: "88px", right: "16px" }}
+          style={{ bottom: "96px", right: "16px" }}
         >
           <Plus size={24} />
         </Link>
@@ -114,14 +114,14 @@ export function MobileNav() {
 
       {/* Bottom nav bar */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] z-50"
-        style={{ height: "72px", paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="flex items-stretch h-full">
+        <div className="flex items-stretch" style={{ height: "80px" }}>
           {session.role === "buyer" ? (
             <>
               <NavItem to="/comprador" icon={LayoutDashboard} label="Início" exact />
-              <NavItem to="/comprador/market" icon={Zap} label="Market" />
+              <NavItem to="/comprador/comprar-individualmente" icon={Zap} label="Comprar" />
               <NavItem to="/comprador/compra-coletiva" icon={Users} label="Coletiva" />
               <NavItem to="/comprador/minhas-compras" icon={ShoppingCart} label="Compras" />
               <MoreBtn />

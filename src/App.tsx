@@ -45,7 +45,8 @@ export default function App() {
           <Route path="/ofertas" element={<OffersPage />} />
           <Route path="/ofertas/:id" element={<OfferDetailPage />} />
           <Route path="/comprador" element={<BuyerDashboardPage />} />
-          <Route path="/comprador/market" element={<BuyerMarketPage />} />
+          <Route path="/comprador/comprar-individualmente" element={<BuyerMarketPage />} />
+          <Route path="/comprador/market" element={<Navigate to="/comprador/comprar-individualmente" replace />} />
           <Route path="/comprador/compra-coletiva" element={<BuyerCollectivePage />} />
           <Route path="/comprador/minhas-compras" element={<BuyerPurchasesPage />} />
           <Route path="/comprador/minhas-compras/:id" element={<BuyerPurchaseDetailPage />} />

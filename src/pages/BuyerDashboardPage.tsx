@@ -125,14 +125,14 @@ export function BuyerDashboardPage() {
               <Zap size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-bold text-lg leading-snug">Market Zuppi</p>
-              <p className="text-orange-100 text-sm mt-0.5">Compre agora sem depender de meta</p>
+              <p className="font-bold text-lg leading-snug">Comprar individualmente</p>
+              <p className="text-orange-100 text-sm mt-0.5">Ofertas para comprar agora, sem esperar meta</p>
             </div>
             <Link
-              to="/comprador/market"
+              to="/comprador/comprar-individualmente"
               className="mt-auto bg-white text-orange-600 font-bold text-sm px-4 py-2 rounded-xl hover:bg-orange-50 transition-colors text-center"
             >
-              Ver ofertas imediatas
+              Ver ofertas
             </Link>
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white p-5 flex flex-col gap-3">
@@ -140,14 +140,14 @@ export function BuyerDashboardPage() {
               <Users size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-bold text-lg leading-snug">Compra Coletiva</p>
-              <p className="text-blue-100 text-sm mt-0.5">Participe da meta e desbloqueie preços melhores</p>
+              <p className="font-bold text-lg leading-snug">Compra coletiva</p>
+              <p className="text-blue-100 text-sm mt-0.5">Entre na meta coletiva e pague menos conforme o volume aumenta</p>
             </div>
             <Link
               to="/comprador/compra-coletiva"
               className="mt-auto bg-white text-blue-600 font-bold text-sm px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors text-center"
             >
-              Entrar nas coletivas
+              Participar
             </Link>
           </div>
         </div>

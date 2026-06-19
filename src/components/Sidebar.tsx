@@ -1,8 +1,8 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, BarChart2,
   Settings, PlusCircle, Sliders, Crown, Headphones,
-  ChevronRight, Users, Shield, Zap,
+  ChevronRight, Users, Zap, LogOut, Shield,
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
 
@@ -17,7 +17,7 @@ interface NavItem {
 
 const buyerNav: NavItem[] = [
   { to: "/comprador", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/comprador/market", label: "Market Zuppi", icon: Zap },
+  { to: "/comprador/comprar-individualmente", label: "Comprar individualmente", icon: Zap },
   { to: "/comprador/compra-coletiva", label: "Compra coletiva", icon: Users },
   { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
   { to: "/comprador/relatorio", label: "Relatórios", icon: BarChart2 },
@@ -51,7 +51,8 @@ function ZuppiLogo() {
 
 export function Sidebar({ role }: { role: Role }) {
   const { pathname } = useLocation();
-  useAppState();
+  const { logout } = useAppState();
+  const navigate = useNavigate();
 
   const navItems = role === "buyer" ? buyerNav : role === "supplier" ? supplierNav : adminNav;
 
@@ -63,7 +64,7 @@ export function Sidebar({ role }: { role: Role }) {
         {navItems.map(({ to, label, icon: Icon, exact }, i) => {
           const active = exact
             ? pathname === to
-            : pathname.startsWith(to) && to !== "/dados-cadastrais" || pathname === to && to !== "/configuracoes";
+            : pathname.startsWith(to) && to !== "/configuracoes" || pathname === to;
           return (
             <Link
               key={`${to}-${i}`}
@@ -73,7 +74,7 @@ export function Sidebar({ role }: { role: Role }) {
                   ? "bg-orange-50 text-orange-600"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
               }`}
-              style={active ? { borderLeft: '3px solid #F97316', paddingLeft: '9px' } : {}}
+              style={active ? { borderLeft: "3px solid #F97316", paddingLeft: "9px" } : {}}
             >
               <Icon
                 size={17}
@@ -113,6 +114,14 @@ export function Sidebar({ role }: { role: Role }) {
             <p className="text-[10px] text-gray-400 truncate">Fale com nosso suporte</p>
           </div>
         </div>
+
+        <button
+          onClick={() => { logout(); navigate("/"); }}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+        >
+          <LogOut size={17} className="text-red-400" />
+          <span>Sair</span>
+        </button>
       </div>
     </aside>
   );

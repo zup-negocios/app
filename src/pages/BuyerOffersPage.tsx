@@ -52,9 +52,9 @@ export function BuyerMarketPage() {
               <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Zap size={18} className="text-orange-500" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Market Zuppi</h1>
+              <h1 className="text-xl font-bold text-gray-900">Comprar individualmente</h1>
             </div>
-            <p className="text-sm text-gray-400 mt-1 ml-11">Compre agora sem depender de meta. Preço fixo, entrega rápida.</p>
+            <p className="text-sm text-gray-400 mt-1 ml-11">Compre agora direto com o fornecedor, sem depender da meta coletiva.</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-400 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
             <Zap size={13} className="text-orange-400" />
