@@ -13,7 +13,7 @@ const KEYS = {
   session: "zuppi_session",
 };
 
-const CURRENT_SEED_VERSION = "2026-06-19-v1";
+const CURRENT_SEED_VERSION = "2026-06-19-v2";
 
 function read<T>(key: string, fallback: T): T {
   const raw = localStorage.getItem(key);
