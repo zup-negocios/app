@@ -880,6 +880,7 @@ export function SupplierCreateOfferPage() {
                 <div>
                   <label className="label-base flex items-center gap-1.5"><Calendar size={13} className="text-gray-400" />Prazo final da oferta</label>
                   <input required type="date" name="deadline" min={todayInputValue()} max={maxOfferDeadlineInputValue()} className="input-base w-full" />
+                  <p className="text-xs text-gray-400 mt-1">Máximo de 3 dias para atingir a meta coletiva.</p>
                 </div>
               </div>
             </div>

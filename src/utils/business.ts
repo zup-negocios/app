@@ -65,7 +65,7 @@ export function todayInputValue() {
 
 export function maxOfferDeadlineInputValue() {
   const date = new Date();
-  date.setDate(date.getDate() + 90);
+  date.setDate(date.getDate() + 3);
   return date.toISOString().slice(0, 10);
 }
 
