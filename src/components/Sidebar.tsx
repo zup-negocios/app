@@ -21,6 +21,7 @@ const buyerNav: NavItem[] = [
   { to: "/comprador/compra-coletiva", label: "Compra coletiva", icon: Users },
   { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
   { to: "/comprador/relatorio", label: "Relatórios", icon: BarChart2 },
+  { to: "/comprador/suporte", label: "Suporte", icon: Headphones },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -31,6 +32,7 @@ const supplierNav: NavItem[] = [
   { to: "/fornecedor/pedidos", label: "Pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
   { to: "/fornecedor/relatorio-compras", label: "Relatórios", icon: BarChart2 },
+  { to: "/fornecedor/suporte", label: "Suporte", icon: Headphones },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
