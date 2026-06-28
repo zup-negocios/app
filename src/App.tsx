@@ -21,6 +21,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { SupplierCreateOfferPage, SupplierDashboardPage, SupplierOfferDetailPage, SupplierPreOrdersPage } from "./pages/SupplierPages";
 import { SupplierOffersPage, SupplierPreOrderDetailPage } from "./pages/SupplierOffersPage";
 import { SupplierClientsReportPage, SupplierPurchasesReportPage } from "./pages/SupplierReportsPage";
+import { SupplierSalesPage } from "./pages/SupplierSalesPage";
 import { SupportPage } from "./pages/SupportPage";
 import { TutorialPage } from "./pages/TutorialPage";
 import { ViabilitySimulatorPage } from "./pages/ViabilitySimulatorPage";
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="/fornecedor/relatorio-clientes" element={<SupplierClientsReportPage />} />
           <Route path="/fornecedor/relatorio-compras" element={<SupplierPurchasesReportPage />} />
           <Route path="/fornecedor/simulador" element={<ViabilitySimulatorPage />} />
+          <Route path="/fornecedor/minhas-vendas" element={<SupplierSalesPage />} />
           <Route path="/fornecedor/suporte" element={<SupportPage />} />
           <Route path="/avaliacoes" element={<RatingsPage />} />
           <Route path="/dados-cadastrais" element={<ProfilePage />} />

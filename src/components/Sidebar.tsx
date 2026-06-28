@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, BarChart2,
   Settings, PlusCircle, Sliders, Crown, Headphones,
-  ChevronRight, Users, Zap, LogOut, Shield,
+  ChevronRight, Users, Zap, LogOut, Shield, TrendingUp,
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
 
@@ -29,6 +29,7 @@ const supplierNav: NavItem[] = [
   { to: "/fornecedor", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/fornecedor/ofertas", label: "Minhas ofertas", icon: Package },
   { to: "/fornecedor/criar-oferta", label: "Criar oferta", icon: PlusCircle },
+  { to: "/fornecedor/minhas-vendas", label: "Minhas vendas", icon: TrendingUp },
   { to: "/fornecedor/pedidos", label: "Pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
   { to: "/fornecedor/relatorio-compras", label: "Relatórios", icon: BarChart2 },
