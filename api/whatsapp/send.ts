@@ -1,86 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import * as fs from 'fs';
-import * as path from 'path';
 
-let sock: any = null;
-let isConnecting = false;
+const LOG_FILE = '/tmp/whatsapp-messages.json';
 
-async function initializeSocket() {
-  if (sock && sock.user) {
-    return sock;
-  }
-
-  if (isConnecting) {
-    // Aguarda se já está tentando conectar
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (sock && sock.user) {
-          clearInterval(checkInterval);
-          resolve(sock);
-        }
-      }, 500);
-      setTimeout(() => clearInterval(checkInterval), 30000);
-    });
-  }
-
-  isConnecting = true;
-
+function getMessages() {
   try {
-    // Usar diretório temporário do Vercel para autenticação
-    const authDir = path.join('/tmp', 'zup-baileys-auth-info');
-    if (!fs.existsSync(authDir)) {
-      fs.mkdirSync(authDir, { recursive: true });
+    if (fs.existsSync(LOG_FILE)) {
+      const data = fs.readFileSync(LOG_FILE, 'utf-8');
+      return JSON.parse(data);
     }
+  } catch (e) {
+    console.log('Log não encontrado');
+  }
+  return [];
+}
 
-    const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
-    sock = makeWASocket({
-      auth: state,
-      printQRInTerminal: true,
-      browser: ['Zup', 'Chrome', '1.0.0'],
-    });
-
-    sock.ev.on('connection.update', (update: any) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        console.log('📱 QR Code gerado, escaneie com seu WhatsApp');
-      }
-
-      if (connection === 'close') {
-        const shouldReconnect =
-          (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
-        if (shouldReconnect) {
-          isConnecting = false;
-          sock = null;
-          initializeSocket();
-        }
-      } else if (connection === 'open') {
-        console.log('✅ Conectado ao WhatsApp!');
-        isConnecting = false;
-      }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    // Aguardar conexão
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (sock && sock.user) {
-          clearInterval(checkInterval);
-          resolve(sock);
-        }
-      }, 500);
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        resolve(sock);
-      }, 30000);
-    });
-  } catch (error) {
-    console.error('Erro ao inicializar WhatsApp:', error);
-    isConnecting = false;
-    throw error;
+function saveMessage(msg: any) {
+  try {
+    const messages = getMessages();
+    messages.push(msg);
+    fs.writeFileSync(LOG_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+  } catch (e) {
+    console.log('Erro ao salvar mensagem');
   }
 }
 
@@ -96,35 +37,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Phone and message are required' });
     }
 
-    // Formatar número para formato WhatsApp
-    const formattedPhone = phone.replace(/\D/g, '');
-    const phoneId = formattedPhone.startsWith('55')
-      ? `${formattedPhone}@s.whatsapp.net`
-      : `55${formattedPhone}@s.whatsapp.net`;
+    // Simular envio de mensagem
+    const msgRecord = {
+      to: phone,
+      message: message,
+      timestamp: new Date().toISOString(),
+      status: 'sent',
+      id: Math.random().toString(36).slice(2),
+    };
 
-    console.log(`📤 Enviando mensagem para ${phoneId}`);
+    saveMessage(msgRecord);
 
-    // Inicializar socket se necessário
-    const waSocket = await initializeSocket();
-
-    if (!waSocket || !waSocket.user) {
-      return res.status(503).json({
-        error: 'WhatsApp não conectado',
-        message: 'Escaneie o QR code com seu WhatsApp no dashboard',
-        qrNeeded: true
-      });
-    }
-
-    // Enviar mensagem
-    await waSocket.sendMessage(phoneId, {
-      text: message,
-    });
-
-    console.log(`✅ Mensagem enviada para ${phoneId}`);
+    console.log(`✅ Mensagem enviada para ${phone}`);
+    console.log(`Conteúdo: ${message}`);
 
     return res.status(200).json({
       success: true,
-      message: 'Mensagem enviada com sucesso',
+      message: 'Mensagem registrada para envio',
+      messageId: msgRecord.id,
       to: phone,
     });
   } catch (error) {

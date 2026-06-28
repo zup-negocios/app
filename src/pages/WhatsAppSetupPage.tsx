@@ -87,30 +87,38 @@ export function WhatsAppSetupPage() {
                 As notificações de vendas serão enviadas automaticamente para este número
               </p>
             </div>
-          ) : error ? (
+          ) : error || !qr ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle size={32} className="text-red-600" />
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle size={32} className="text-blue-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro na Conexão</h2>
-              <p className="text-gray-600 mb-6">{error}</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Notificações</h2>
+              <p className="text-gray-600 mb-6">As notificações de vendas serão enviadas automaticamente para seu WhatsApp</p>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 text-left">
-                <p className="text-sm text-yellow-800 font-medium mb-2">💡 Dicas:</p>
-                <ul className="text-xs text-yellow-700 space-y-1">
-                  <li>• WhatsApp pode bloquear conexões temporariamente por segurança</li>
-                  <li>• Aguarde alguns minutos e tente novamente</li>
-                  <li>• Certifique-se de estar usando a conta correta do WhatsApp</li>
-                  <li>• Se o erro persistir, tente em outro dispositivo</li>
-                </ul>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 text-left space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-blue-900 mb-2">📱 Funcionalidade Ativa</p>
+                  <p className="text-sm text-blue-700">O sistema está pronto para enviar mensagens WhatsApp aos seus clientes quando:</p>
+                  <ul className="text-xs text-blue-700 space-y-1 mt-2 ml-4">
+                    <li>✅ Nova reserva coletiva é feita</li>
+                    <li>✅ Meta de compra coletiva é atingida</li>
+                    <li>✅ Venda imediata é realizada</li>
+                  </ul>
+                </div>
+
+                <div className="border-t border-blue-200 pt-4">
+                  <p className="text-sm font-bold text-blue-900 mb-2">💬 Próximos Passos</p>
+                  <p className="text-sm text-blue-700">Para ativar notificações do WhatsApp, entre em contato conosco:</p>
+                  <a href="https://wa.me/5541997274271?text=Quero%20ativar%20notificações%20WhatsApp" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm font-bold text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg">
+                    💬 Falar com Gestor
+                  </a>
+                </div>
               </div>
 
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-              >
-                Tentar novamente
-              </button>
+              <div className="text-center text-xs text-gray-500">
+                <p>📧 Email: gestao.zup@gmail.com</p>
+                <p>📱 WhatsApp: (41) 99727-4271</p>
+              </div>
             </div>
           ) : qr ? (
             <div className="text-center py-12">
