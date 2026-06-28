@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(git config *)",
+      "Bash(winget install *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); gh --version)",
+      "Bash(git commit -m ' *)",
+      "PowerShell(npm install -g vercel 2>&1)",
+      "Bash(npm --version)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(\\(Get-Command npm\\).Source)",
+      "Bash(node -e ' *)",
+      "Bash(ls '/mnt/g/Meu Drive/Zuppi/central-alianca-360/')",
+      "Read(//mnt/**)",
+      "Bash(cmd.exe /c \"dir \\\\\"G:\\\\Meu Drive\\\\Zuppi\\\\central-alianca-360\\\\\"\")",
+      "Bash(npm install *)"
+    ]
+  }
+}
