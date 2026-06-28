@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const EVOLUTION_URL = "http://localhost:8080";
-const EVOLUTION_API_KEY = "zup_evolution_key_123";
+// Armazenar mensagens simuladas em memória (durante a sessão)
+const simulatedMessages: any[] = [];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -15,42 +15,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing parameters' });
     }
 
-    console.log(`📱 Enviando mensagem via Evolution para ${phone}`);
+    console.log(`📱 Enviando mensagem (SIMULADO) para ${phone}`);
     console.log(`Instância: ${instanceName}`);
     console.log(`Mensagem: ${message}`);
 
-    // Chamar Evolution API para enviar mensagem
-    const sendResponse = await fetch(`${EVOLUTION_URL}/message/sendText/${instanceName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY,
-      },
-      body: JSON.stringify({
-        number: phone,
-        text: message,
-      }),
-    }).catch(err => {
-      console.error('Erro ao enviar via Evolution:', err);
-      return null;
-    });
+    // Simular envio de mensagem
+    const messageRecord = {
+      id: Math.random().toString(36).slice(2),
+      instanceName,
+      to: phone,
+      message: message,
+      timestamp: new Date().toISOString(),
+      status: 'sent',
+      isSimulated: true,
+    };
 
-    if (!sendResponse || !sendResponse.ok) {
-      console.warn(`⚠️ Erro ao enviar mensagem para ${phone}`);
-      return res.status(400).json({
-        success: false,
-        message: 'Erro ao enviar mensagem',
-        to: phone,
-      });
-    }
+    simulatedMessages.push(messageRecord);
 
-    const data = await sendResponse.json();
+    // Mostrar no console
+    console.log(`✅ Mensagem simulada enviada para ${phone}`);
+    console.log(`ID: ${messageRecord.id}`);
 
     return res.status(200).json({
       success: true,
-      message: 'Mensagem enviada via Evolution',
-      messageId: data.key?.id || Math.random().toString(36).slice(2),
+      message: '✅ Mensagem simulada enviada com sucesso',
+      messageId: messageRecord.id,
       to: phone,
+      isSimulated: true,
+      timestamp: messageRecord.timestamp,
     });
   } catch (error) {
     console.error('Erro ao enviar mensagem:', error);

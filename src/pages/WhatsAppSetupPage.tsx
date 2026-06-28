@@ -338,17 +338,20 @@ export function WhatsAppSetupPage() {
                 </button>
               )}
 
-              <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                <p className="text-sm text-yellow-900 font-medium">
-                  ℹ️ Sobre Evolution API:
+              <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                <p className="text-sm text-purple-900 font-medium">
+                  🧪 Modo SIMULADOR (Teste)
                 </p>
-                <ul className="text-xs text-yellow-800 mt-2 space-y-1">
-                  <li>✅ Completamente gratuita e open-source</li>
-                  <li>✅ Sem limites de mensagens</li>
-                  <li>✅ Sem configuração complicada</li>
-                  <li>✅ QR Code funcional e real</li>
-                  <li>✅ Roda localmente via Docker</li>
+                <ul className="text-xs text-purple-800 mt-2 space-y-1">
+                  <li>✅ QR Code visual para testes</li>
+                  <li>✅ Mensagens são armazenadas no sistema</li>
+                  <li>✅ Nenhuma dependência externa</li>
+                  <li>✅ Pronto para testes completos</li>
+                  <li>⚠️ Mensagens NÃO são enviadas para WhatsApp real</li>
                 </ul>
+                <p className="text-xs text-purple-700 mt-3 font-semibold">
+                  💡 Depois: Configure Evolution API ou WhatsApp Business API para envios reais
+                </p>
               </div>
             </div>
           )}
