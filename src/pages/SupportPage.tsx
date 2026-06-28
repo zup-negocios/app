@@ -15,7 +15,7 @@ export function SupportPage() {
 
   const userType = isBuyer ? "Comprador" : "Fornecedor";
   const userName = user?.companyName || "Usuário";
-  const whatsappNumber = "5541972744271";
+  const whatsappNumber = "5541997274271";
   const supportEmail = "gestao.zup@gmail.com";
   const whatsappMessage = `Olá! Sou ${userName} (${userType}) e gostaria de obter suporte.`;
 
