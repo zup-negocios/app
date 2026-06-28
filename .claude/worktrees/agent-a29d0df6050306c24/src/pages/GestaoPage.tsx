@@ -9,9 +9,8 @@ import { currency, lastMonthOptions, monthKey, monthLabel } from "../utils/busin
 import {
   Users, Building2, Tag, ShoppingCart, Target, TrendingUp, Clock,
   AlertTriangle, CheckCircle, ChevronRight, LogOut, LayoutDashboard,
-  FileText, DollarSign, Settings, Crown, MessageSquare
+  FileText, DollarSign, Settings, Crown
 } from "lucide-react";
-import { WhatsAppSetupPage } from "./WhatsAppSetupPage";
 
 // ─── COUNTER ─────────────────────────────────────────────────────────────────
 
@@ -52,7 +51,7 @@ function AnimatedKpi({ value, label, isCurrency = false }: { value: number; labe
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 
-type GestaoSection = "dashboard" | "compradores" | "fornecedores" | "ofertas" | "negociacoes" | "financeiro" | "relatorios" | "whatsapp" | "configuracoes";
+type GestaoSection = "dashboard" | "compradores" | "fornecedores" | "ofertas" | "negociacoes" | "financeiro" | "relatorios" | "configuracoes";
 
 const NAV: { icon: React.ElementType; label: string; section: GestaoSection }[] = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
@@ -62,7 +61,6 @@ const NAV: { icon: React.ElementType; label: string; section: GestaoSection }[] 
   { icon: ShoppingCart, label: "Negociações", section: "negociacoes" },
   { icon: DollarSign, label: "Financeiro", section: "financeiro" },
   { icon: FileText, label: "Relatórios", section: "relatorios" },
-  { icon: MessageSquare, label: "WhatsApp", section: "whatsapp" },
   { icon: Settings, label: "Configurações", section: "configuracoes" },
 ];
 
@@ -212,7 +210,7 @@ export function GestaoPage() {
   const sectionLabel: Record<GestaoSection, string> = {
     dashboard: "Dashboard", compradores: "Compradores", fornecedores: "Fornecedores",
     ofertas: "Ofertas", negociacoes: "Negociações", financeiro: "Financeiro",
-    relatorios: "Relatórios", whatsapp: "WhatsApp", configuracoes: "Configurações",
+    relatorios: "Relatórios", configuracoes: "Configurações",
   };
 
   return (
@@ -446,10 +444,6 @@ export function GestaoPage() {
               </div>
             );
           })()}
-
-          {section === "whatsapp" && (
-            <WhatsAppSetupPage />
-          )}
 
           {section === "configuracoes" && (
             <div className="card p-12 text-center">

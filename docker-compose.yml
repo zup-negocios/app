@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  evolution-api:
+    image: evawel/evolution-api:latest
+    container_name: evolution-api-zup
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/evolution
+      - API_URL=http://localhost:8080
+      - API_KEY=zup_evolution_key_123
+      - WEBHOOK_URL=http://localhost:3000/webhook
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+    networks:
+      - evolution-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-db-zup
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=evolution
+    volumes:
+      - evolution-db:/var/lib/postgresql/data
+    networks:
+      - evolution-network
+
+volumes:
+  evolution-db:
+
+networks:
+  evolution-network:
+    driver: bridge

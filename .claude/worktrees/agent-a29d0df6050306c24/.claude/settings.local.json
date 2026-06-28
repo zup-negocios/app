@@ -17,8 +17,7 @@
       "Bash(ls '/mnt/g/Meu Drive/Zuppi/central-alianca-360/')",
       "Read(//mnt/**)",
       "Bash(cmd.exe /c \"dir \\\\\"G:\\\\Meu Drive\\\\Zuppi\\\\central-alianca-360\\\\\"\")",
-      "Bash(npm install *)",
-      "Bash(git commit *)"
+      "Bash(npm install *)"
     ]
   }
 }
