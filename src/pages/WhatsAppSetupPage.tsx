@@ -1,234 +1,333 @@
 import { useState } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Send, Check } from "lucide-react";
+import { Save, Edit2, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 
-export function WhatsAppSetupPage() {
-  const [phone, setPhone] = useState("41995127540");
-  const [testMessage, setTestMessage] = useState("");
-  const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+const DEFAULT_TEMPLATES = {
+  buyer_signup: {
+    title: "Bem-vindo Comprador",
+    description: "Enviado ao se cadastrar como consumidor",
+    template: `Bem-vindo à Zup! 🎉
 
-  const sendTestMessage = async () => {
-    if (!phone || !testMessage) {
-      toast.error("Preencha telefone e mensagem");
-      return;
-    }
+Você agora faz parte de nossa comunidade de compras coletivas.
 
-    setLoading(true);
-    try {
-      const response = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: phone.replace(/\D/g, ""),
-          message: testMessage,
-        }),
-      });
+Acesse: zup.com.br/comprador
+Email: suporte@zup.com.br
+WhatsApp: (41) 99727-4271
 
-      const data = await response.json();
+Aproveite as melhores ofertas! 🛍️`,
+  },
+  supplier_signup: {
+    title: "Bem-vindo Fornecedor",
+    description: "Enviado ao se cadastrar como fornecedor com dados de acesso",
+    template: `Bem-vindo à Zup! 🚀
 
-      if (response.ok && data.success) {
-        toast.success("✅ Mensagem enviada!");
-        setMessages([
-          ...messages,
-          {
-            id: data.messageId,
-            to: phone,
-            message: testMessage,
-            timestamp: new Date().toLocaleTimeString("pt-BR"),
-          },
-        ]);
-        setTestMessage("");
-      } else {
-        toast.error("Erro ao enviar mensagem");
-      }
-    } catch (error) {
-      toast.error("Erro na conexão");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+Sua conta foi criada com sucesso!
 
-  const sendCollectiveTestMessage = () => {
-    const msg = `🎉 Ótima notícia!
-Mais uma reserva chegou na sua oferta!
+📱 Acesse: zup.com.br/fornecedor
+👤 Email: {email}
+🔑 Senha: {password}
 
-📦 Oferta: Arroz Integral Premium
-📊 Progresso: 65% da meta (325/500 kg)
-⏳ Prazo: até 30 de junho
-
-Bora chegar nessa meta! 💪`;
-    setTestMessage(msg);
-  };
-
-  const sendMetaTestMessage = () => {
-    const msg = `🚀 META ATINGIDA! 🚀
-
-Sua oferta "Arroz Integral Premium"
-atingiu a meta!
-
-📊 500 kg reservados
-💰 Total: R$ 2.500,00
-👥 8 comprador(es)
-
-Detalhes dos clientes: veja no sistema
-Próximo passo: Confirme entrega 📞`;
-    setTestMessage(msg);
-  };
-
-  const sendImmediateTestMessage = () => {
-    const msg = `🔥 VENDA IMEDIATA! 🔥
+Comece a criar suas ofertas agora!
+Suporte: gestao.zup@gmail.com`,
+  },
+  immediate_sale: {
+    title: "Venda Imediata",
+    description: "Enviado ao fornecedor quando uma venda imediata acontece",
+    template: `🔥 VENDA IMEDIATA! 🔥
 
 PARABÉNS! Você acaba de vender!
 
-📦 Arroz Integral Premium
-💰 50 kg = R$ 250,00
-⏱️ Agora: 15:30
-👤 Cliente: Supermercado XYZ
+📦 {product}
+💰 {quantity} {unit} = R$ {amount}
+⏱️ Agora: {time}
+👤 Cliente: {buyer}
 
 Relatório completo no sistema ➜ /fornecedor/minhas-vendas
+Próximas vendas chegando! 🚀`,
+  },
+  collective_reservation: {
+    title: "Nova Reserva Coletiva",
+    description: "Enviado ao fornecedor quando uma reserva coletiva acontece",
+    template: `🎉 Ótima notícia!
+Mais uma reserva chegou na sua oferta!
 
-Próximas vendas chegando! 🚀`;
-    setTestMessage(msg);
+📦 Oferta: {product}
+📊 Progresso: {progress}% da meta ({current}/{target} {unit})
+⏳ Prazo: até {deadline}
+
+Bora chegar nessa meta! 💪`,
+  },
+  collective_meta_reached: {
+    title: "Meta ou Data Limite Atingida",
+    description: "Enviado ao fornecedor quando meta ou data limite é alcançada",
+    template: `🚀 META ATINGIDA! 🚀
+
+Sua oferta "{product}"
+atingiu a meta!
+
+📊 {total_quantity} {unit} reservados
+💰 Total: R$ {total_amount}
+👥 {buyer_count} comprador(es)
+
+Detalhes dos clientes: veja no sistema
+Próximo passo: Confirme entrega 📞`,
+  },
+  buyer_immediate_purchase: {
+    title: "Compra Imediata Realizada (Cliente)",
+    description: "Enviado ao cliente quando realiza uma compra imediata",
+    template: `✅ Sua compra foi realizada!
+
+📦 {product}
+💰 {quantity} {unit} = R$ {amount}
+🏪 Fornecedor: {supplier}
+📞 Contato: {supplier_phone}
+
+Acompanhe sua entrega no sistema!
+Obrigado por comprar com a Zup! 🙏`,
+  },
+  buyer_collective_reserved: {
+    title: "Reserva Coletiva Confirmada (Cliente)",
+    description: "Enviado ao cliente quando se inscreve em compra coletiva",
+    template: `🎯 Sua reserva foi confirmada!
+
+📦 {product}
+🎁 {quantity} {unit}
+💰 Valor: R$ {amount}
+
+Você receberá atualizações sobre o progresso da compra.
+Meta: {target_quantity} {unit}
+Progresso: {progress}%
+
+Fique ligado! 👀`,
+  },
+  buyer_collective_completed: {
+    title: "Compra Coletiva Finalizada (Cliente)",
+    description: "Enviado ao cliente quando compra coletiva é finalizada",
+    template: `🎉 PARABÉNS! Sua compra coletiva foi finalizada!
+
+📦 {product}
+✅ Total negociado: {total_quantity} {unit}
+💰 Valor total: R$ {total_amount}
+
+O fornecedor já recebeu seu pedido e entrará em contato em breve com detalhes de entrega!
+
+Obrigado por fazer parte desta compra! 🙏`,
+  },
+  buyer_support: {
+    title: "Resposta de Suporte (Cliente)",
+    description: "Enviado ao cliente quando solicita suporte",
+    template: `📞 Olá! Recebemos sua solicitação!
+
+Nossa equipe já está analisando seu caso e em breve responderemos com a solução.
+
+Tempo médio de resposta: 2-4 horas
+
+Obrigado por sua paciência! 🙏`,
+  },
+  supplier_support: {
+    title: "Resposta de Suporte (Fornecedor)",
+    description: "Enviado ao fornecedor quando solicita suporte",
+    template: `📞 Olá! Recebemos sua solicitação!
+
+Nossa equipe já está analisando seu caso e em breve responderemos com a solução.
+
+Tempo médio de resposta: 2-4 horas
+
+Obrigado por sua paciência! 🙏`,
+  },
+};
+
+export function WhatsAppSetupPage() {
+  const [activeTab, setActiveTab] = useState<"connection" | "templates">("connection");
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const startEdit = (key: string) => {
+    setEditingKey(key);
+    setEditValue(templates[key as keyof typeof templates].template);
+  };
+
+  const saveTemplate = (key: string) => {
+    setTemplates({
+      ...templates,
+      [key]: {
+        ...templates[key as keyof typeof templates],
+        template: editValue,
+      },
+    });
+    setEditingKey(null);
+    toast.success("Template salvo com sucesso!");
   };
 
   return (
     <DashboardLayout role="admin">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Teste WhatsApp</h1>
-          <p className="text-gray-600 mt-2">
-            Teste o sistema de notificações automáticas
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Configuração WhatsApp</h1>
+          <p className="text-gray-600 mt-2">Gerencie notificações e templates automáticos</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Formulário de teste */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="font-bold text-gray-900 mb-4">📱 Enviar Mensagem de Teste</h2>
+        {/* Abas */}
+        <div className="flex gap-4 mb-6 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("connection")}
+            className={`pb-4 px-2 font-medium transition-colors ${
+              activeTab === "connection"
+                ? "border-b-2 border-orange-500 text-orange-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            🔗 Conexão
+          </button>
+          <button
+            onClick={() => setActiveTab("templates")}
+            className={`pb-4 px-2 font-medium transition-colors ${
+              activeTab === "templates"
+                ? "border-b-2 border-orange-500 text-orange-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            💬 Templates
+          </button>
+        </div>
 
-              {/* Campo de telefone */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="41995127540"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Use formato: 41995127540 (DDD + número)
-                </p>
+        {/* Aba: Conexão */}
+        {activeTab === "connection" && (
+          <div className="bg-white rounded-2xl p-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Conectar WhatsApp</h2>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Instruções */}
+              <div>
+                <h3 className="font-bold text-gray-800 mb-4">📱 Como conectar:</h3>
+                <ol className="space-y-3 text-sm text-gray-700">
+                  <li className="flex gap-3">
+                    <span className="font-bold text-orange-600">1.</span>
+                    <span>Acesse WhatsApp Web no computador</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-orange-600">2.</span>
+                    <span>Escaneie o código QR com seu celular</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-orange-600">3.</span>
+                    <span>Confirme o acesso no seu telefone</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-orange-600">4.</span>
+                    <span>A conexão estará ativa automaticamente</span>
+                  </li>
+                </ol>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <p className="text-sm text-blue-900">
+                    ℹ️ As notificações serão enviadas automaticamente segundo os templates configurados.
+                  </p>
+                </div>
               </div>
 
-              {/* Campo de mensagem */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mensagem
-                </label>
-                <textarea
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  rows={6}
-                  placeholder="Digite a mensagem a enviar..."
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
-                />
-              </div>
-
-              {/* Botão enviar */}
-              <button
-                onClick={sendTestMessage}
-                disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <Send size={16} />
-                {loading ? "Enviando..." : "Enviar Mensagem"}
-              </button>
-            </div>
-
-            {/* Templates de teste */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-4">📋 Templates de Teste</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={sendCollectiveTestMessage}
-                  className="w-full text-left px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition-colors"
-                >
-                  <p className="font-medium text-orange-900">📦 Nova Reserva Coletiva</p>
-                  <p className="text-xs text-orange-700">Teste notificação de nova reserva</p>
-                </button>
-
-                <button
-                  onClick={sendMetaTestMessage}
-                  className="w-full text-left px-4 py-3 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-colors"
-                >
-                  <p className="font-medium text-green-900">🚀 Meta Atingida</p>
-                  <p className="text-xs text-green-700">Teste notificação de meta alcançada</p>
-                </button>
-
-                <button
-                  onClick={sendImmediateTestMessage}
-                  className="w-full text-left px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors"
-                >
-                  <p className="font-medium text-blue-900">⚡ Venda Imediata</p>
-                  <p className="text-xs text-blue-700">Teste notificação de venda imediata</p>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Histórico de mensagens */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 h-fit">
-            <h3 className="font-bold text-gray-900 mb-4">📤 Histórico Enviado</h3>
-
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-400 text-sm">Nenhuma mensagem enviada</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {messages.map((msg) => (
-                  <div key={msg.id} className="bg-gray-50 rounded-lg p-3 text-xs">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-gray-600">{msg.to}</span>
-                      <span className="text-gray-400">{msg.timestamp}</span>
-                    </div>
-                    <p className="text-gray-700 whitespace-pre-wrap break-words">
-                      {msg.message.substring(0, 100)}...
-                    </p>
-                    <div className="flex items-center gap-1 mt-2 text-green-600">
-                      <Check size={12} />
-                      <span className="text-xs">Registrada</span>
-                    </div>
+              {/* QR Code Placeholder */}
+              <div className="flex flex-col items-center justify-center">
+                <div className="w-64 h-64 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
+                  <div className="text-center">
+                    <MessageSquare size={48} className="text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">QR Code será exibido aqui</p>
+                    <p className="text-gray-400 text-xs mt-1">quando ativado</p>
                   </div>
-                ))}
+                </div>
+                <button className="mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg">
+                  Ativar Conexão
+                </button>
               </div>
-            )}
-
-            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500">
-              <p>✅ {messages.length} mensagem(ns) enviada(s)</p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Informações de funcionamento */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-          <h3 className="font-bold text-blue-900 mb-3">ℹ️ Como funciona</h3>
-          <ul className="text-sm text-blue-800 space-y-2">
-            <li>✅ Mensagens são automaticamente enviadas quando:</li>
-            <li className="ml-4">• Nova reserva coletiva é feita → fornecedor notificado</li>
-            <li className="ml-4">• Meta de compra é atingida → aviso especial</li>
-            <li className="ml-4">• Venda imediata é realizada → notificação entusiasta</li>
-            <li className="mt-3">📊 Cada mensagem é registrada em tempo real</li>
-            <li>💾 O histórico fica armazenado no servidor</li>
-          </ul>
-        </div>
+        {/* Aba: Templates */}
+        {activeTab === "templates" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Templates Automáticos</h2>
+              <p className="text-gray-600 mb-6">Edite os templates de mensagens que serão enviados automaticamente</p>
+
+              {editingKey ? (
+                // Modo edição
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mensagem
+                    </label>
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      rows={10}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveTemplate(editingKey)}
+                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <Save size={16} />
+                      Salvar
+                    </button>
+                    <button
+                      onClick={() => setEditingKey(null)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-yellow-50 rounded-lg text-xs text-yellow-800">
+                    💡 Use as variáveis entre chaves para preencher automaticamente:
+                    <br />
+                    {"{product}"}, {"{quantity}"}, {"{amount}"}, {"{buyer}"}, {"{supplier}"}, {"{progress}"}, {"{target_quantity}"}, {"{total_amount}"}, etc.
+                  </div>
+                </div>
+              ) : (
+                // Modo visualização
+                <div className="space-y-4">
+                  {Object.entries(templates).map(([key, template]) => (
+                    <div key={key} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-orange-200 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-bold text-gray-900">{template.title}</h3>
+                          <p className="text-xs text-gray-600 mt-1">{template.description}</p>
+                        </div>
+                        <button
+                          onClick={() => startEdit(key)}
+                          className="flex items-center gap-1 text-orange-600 hover:text-orange-700 font-medium text-sm"
+                        >
+                          <Edit2 size={14} />
+                          Editar
+                        </button>
+                      </div>
+
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                        {template.template}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+              <h3 className="font-bold text-blue-900 mb-3">ℹ️ Sobre os Templates</h3>
+              <ul className="text-sm text-blue-800 space-y-2">
+                <li>✅ Customize cada template conforme sua estratégia</li>
+                <li>✅ Use variáveis entre chaves para dados dinâmicos</li>
+                <li>✅ Emojis são totalmente suportados</li>
+                <li>✅ Os templates serão enviados automaticamente</li>
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
