@@ -7,7 +7,7 @@ export function LoginChoice() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-4">
       <div className="text-center space-y-3">
-        <img src="/assets/zuppi-logo-light.png" alt="Zuppi logo" className="h-16 w-auto mx-auto" />
+        <img src="/assets/zup-logo-light.png" alt="Zup logo" className="h-16 w-auto mx-auto" />
         <h1 className="text-3xl md:text-4xl font-extrabold">Escolha seu acesso</h1>
         <p className="text-gray-600">Dois fluxos diferentes para dois trabalhos diferentes dentro da compra coletiva B2B.</p>
       </div>
@@ -51,7 +51,7 @@ export function LoginChoice() {
       </div>
 
       <p className="text-center text-xs text-gray-400">
-        Equipe Zuppi?{" "}
+        Equipe Zup?{" "}
         <Link to="/login" className="text-orange-500 font-semibold hover:underline">
           Acesso interno →
         </Link>

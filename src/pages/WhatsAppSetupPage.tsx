@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
+=======
+import { DashboardLayout } from "../components/DashboardLayout";
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 import { Save, Edit2, MessageSquare, Check, X, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -36,7 +40,11 @@ Comece a criar suas ofertas agora!
 Suporte: gestao.zup@gmail.com`,
   },
   immediate_sale: {
+<<<<<<< HEAD
     title: "Venda Imediata (Fornecedor)",
+=======
+    title: "Venda Imediata",
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     description: "Enviado ao fornecedor quando uma venda imediata acontece",
     template: `🔥 VENDA IMEDIATA! 🔥
 
@@ -47,11 +55,19 @@ PARABÉNS! Você acaba de vender!
 ⏱️ Agora: {time}
 👤 Cliente: {buyer}
 
+<<<<<<< HEAD
 Relatório completo no sistema
 Próximas vendas chegando! 🚀`,
   },
   collective_reservation: {
     title: "Nova Reserva Coletiva (Fornecedor)",
+=======
+Relatório completo no sistema ➜ /fornecedor/minhas-vendas
+Próximas vendas chegando! 🚀`,
+  },
+  collective_reservation: {
+    title: "Nova Reserva Coletiva",
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     description: "Enviado ao fornecedor quando uma reserva coletiva acontece",
     template: `🎉 Ótima notícia!
 Mais uma reserva chegou na sua oferta!
@@ -62,6 +78,24 @@ Mais uma reserva chegou na sua oferta!
 
 Bora chegar nessa meta! 💪`,
   },
+<<<<<<< HEAD
+=======
+  collective_meta_reached: {
+    title: "Meta ou Data Limite Atingida",
+    description: "Enviado ao fornecedor quando meta ou data limite é alcançada",
+    template: `🚀 META ATINGIDA! 🚀
+
+Sua oferta "{product}"
+atingiu a meta!
+
+📊 {total_quantity} {unit} reservados
+💰 Total: R$ {total_amount}
+👥 {buyer_count} comprador(es)
+
+Detalhes dos clientes: veja no sistema
+Próximo passo: Confirme entrega 📞`,
+  },
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   buyer_immediate_purchase: {
     title: "Compra Imediata Realizada (Cliente)",
     description: "Enviado ao cliente quando realiza uma compra imediata",
@@ -99,7 +133,11 @@ Fique ligado! 👀`,
 ✅ Total negociado: {total_quantity} {unit}
 💰 Valor total: R$ {total_amount}
 
+<<<<<<< HEAD
 O fornecedor já recebeu seu pedido!
+=======
+O fornecedor já recebeu seu pedido e entrará em contato em breve com detalhes de entrega!
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 
 Obrigado por fazer parte desta compra! 🙏`,
   },
@@ -167,6 +205,10 @@ export function WhatsAppSetupPage() {
   };
 
   const handleQRScanned = () => {
+<<<<<<< HEAD
+=======
+    // Simular que o QR foi escaneado
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     setIsConnected(true);
     setQrCode(null);
     toast.success("✅ WhatsApp conectado com sucesso!");
@@ -198,6 +240,7 @@ export function WhatsAppSetupPage() {
   };
 
   return (
+<<<<<<< HEAD
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Configuração WhatsApp</h1>
@@ -396,10 +439,86 @@ export function WhatsAppSetupPage() {
                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
                   >
                     Cancelar
+=======
+    <DashboardLayout role="admin">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Configuração WhatsApp</h1>
+          <p className="text-gray-600 mt-2">
+            Conecte WhatsApp e gerencie templates de mensagens automáticas
+          </p>
+        </div>
+
+        {/* Abas */}
+        <div className="flex gap-4 mb-6 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("connection")}
+            className={`pb-4 px-2 font-medium transition-colors ${
+              activeTab === "connection"
+                ? "border-b-2 border-orange-500 text-orange-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            📱 Conexão
+          </button>
+          <button
+            onClick={() => setActiveTab("templates")}
+            className={`pb-4 px-2 font-medium transition-colors ${
+              activeTab === "templates"
+                ? "border-b-2 border-orange-500 text-orange-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            💬 Templates
+          </button>
+        </div>
+
+        {/* Aba: Conexão */}
+        {activeTab === "connection" && (
+          <div className="bg-white rounded-2xl p-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Conectar WhatsApp via Evolution API
+            </h2>
+
+            {isConnected ? (
+              <div className="space-y-6">
+                <div className="p-6 bg-green-50 rounded-xl border-2 border-green-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Check size={32} className="text-green-600" />
+                    <div>
+                      <p className="font-bold text-green-900">
+                        ✅ WhatsApp Conectado
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Instância: {instanceName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-green-800 mb-4">
+                    Todas as mensagens automáticas serão enviadas via WhatsApp:
+                  </p>
+
+                  <ul className="text-sm text-green-800 space-y-2 ml-4">
+                    <li>✅ Boas-vindas para novos clientes</li>
+                    <li>✅ Credenciais para novos fornecedores</li>
+                    <li>✅ Confirmação de compras imediatas</li>
+                    <li>✅ Atualizações de reservas coletivas</li>
+                    <li>✅ Respostas de suporte</li>
+                  </ul>
+
+                  <button
+                    onClick={handleDisconnect}
+                    className="mt-6 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg flex items-center gap-2"
+                  >
+                    <X size={16} />
+                    Desconectar
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
                   </button>
                 </div>
               </div>
             ) : (
+<<<<<<< HEAD
               <div className="space-y-4">
                 {Object.entries(templates).map(([key, template]) => (
                   <div
@@ -435,5 +554,165 @@ export function WhatsAppSetupPage() {
         </div>
       )}
     </div>
+=======
+              <div className="space-y-6">
+                <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
+                  <h3 className="font-bold text-blue-900 mb-3">
+                    🎯 Como conectar (3 passos)
+                  </h3>
+
+                  <ol className="text-sm text-blue-800 space-y-3 ml-4">
+                    <li>
+                      <strong>1. Clique em "Gerar QR Code"</strong> abaixo
+                    </li>
+                    <li>
+                      <strong>2. Abra WhatsApp no seu celular</strong> e escaneie o código com a câmera
+                    </li>
+                    <li>
+                      <strong>3. Confirme</strong> e o WhatsApp estará conectado
+                    </li>
+                  </ol>
+                </div>
+
+                {qrCode ? (
+                  <div className="p-6 bg-white rounded-xl border-2 border-orange-200 space-y-4">
+                    <div className="text-center">
+                      <p className="font-bold text-gray-900 mb-4">
+                        Escaneie este QR Code:
+                      </p>
+                      <img
+                        src={qrCode}
+                        alt="QR Code"
+                        className="w-64 h-64 mx-auto border-4 border-orange-300 rounded-lg p-2"
+                      />
+                    </div>
+
+                    <div className="space-y-2 text-center">
+                      <p className="text-sm text-gray-600">
+                        Aponte a câmera do seu celular para este código
+                      </p>
+                      <button
+                        onClick={handleQRScanned}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg"
+                      >
+                        ✅ Já escaneei, conectar agora
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGenerateQR}
+                    disabled={isLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw size={20} className="animate-spin" />
+                        Gerando QR Code...
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare size={20} />
+                        Gerar QR Code
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <p className="text-sm text-yellow-900 font-medium">
+                    ℹ️ Sobre Evolution API:
+                  </p>
+                  <ul className="text-xs text-yellow-800 mt-2 space-y-1">
+                    <li>✅ Completamente gratuita</li>
+                    <li>✅ Sem limites de mensagens</li>
+                    <li>✅ Sem configuração complicada</li>
+                    <li>✅ QR Code funcional</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Aba: Templates */}
+        {activeTab === "templates" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Templates Automáticos
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Customize as mensagens que serão enviadas automaticamente
+              </p>
+
+              {editingKey ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mensagem
+                    </label>
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      rows={10}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveTemplate(editingKey)}
+                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <Save size={16} />
+                      Salvar
+                    </button>
+                    <button
+                      onClick={() => setEditingKey(null)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(templates).map(([key, template]) => (
+                    <div
+                      key={key}
+                      className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-orange-200 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-bold text-gray-900">
+                            {template.title}
+                          </h3>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {template.description}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => startEdit(key)}
+                          className="flex items-center gap-1 text-orange-600 hover:text-orange-700 font-medium text-sm"
+                        >
+                          <Edit2 size={14} />
+                          Editar
+                        </button>
+                      </div>
+
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                        {template.template}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   );
 }

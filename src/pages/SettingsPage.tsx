@@ -237,8 +237,8 @@ export function SettingsPage() {
                   <NotifRow label="Nova reserva na minha oferta" desc="Quando um comprador reservar na sua oferta" />
                   <NotifRow label="Meta atingida" desc="Quando sua oferta atingir o volume mínimo" />
                   <NotifRow label="Oferta aprovada/reprovada" desc="Quando o admin revisar sua oferta" />
-                  <NotifRow label="Mensagem do admin" desc="Comunicações importantes da equipe Zuppi" />
-                  <NotifRow label="Novidades da Zuppi" desc="Atualizações e novas funcionalidades" defaultOn={false} />
+                  <NotifRow label="Mensagem do admin" desc="Comunicações importantes da equipe Zup" />
+                  <NotifRow label="Novidades da Zup" desc="Atualizações e novas funcionalidades" defaultOn={false} />
                 </div>
                 <div className="pt-4">
                   <button className="btn-primary" onClick={() => toast.success("Preferências salvas!")}>

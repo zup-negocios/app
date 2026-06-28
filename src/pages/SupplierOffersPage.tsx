@@ -99,7 +99,7 @@ export function SupplierOffersPage() {
               <table className="w-full text-sm min-w-[1000px]">
                 <thead>
                   <tr className="border-b border-gray-50">
-                    {["Produto", "Categoria", "Status", "Preço Zuppi", "Reservado", "Meta", "Progresso", "Compradores", "Prazo", ""].map(h => (
+                    {["Produto", "Categoria", "Status", "Preço Zup", "Reservado", "Meta", "Progresso", "Compradores", "Prazo", ""].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>

@@ -7,7 +7,7 @@ import { currency, dateLabel, getCurrentCollectivePrice, getBestCollectivePrice,
 import { ProgressBarMeta } from "../components/ProgressBarMeta";
 import type { MarketOrderStatus, ReservationStatus } from "../types";
 
-const FACILITADORA_NOTICE = "A Zuppi atua como plataforma facilitadora de conexão comercial. Pagamento, emissão fiscal, retirada, entrega e demais condições operacionais devem ser tratados diretamente entre comprador e fornecedor.";
+const FACILITADORA_NOTICE = "A Zup atua como plataforma facilitadora de conexão comercial. Pagamento, emissão fiscal, retirada, entrega e demais condições operacionais devem ser tratados diretamente entre comprador e fornecedor.";
 
 // ─── Status maps ─────────────────────────────────────────────────────────────
 

@@ -56,7 +56,7 @@ export function BuyerReportsPage() {
 
   const TABS: { value: ReportTab; label: string }[] = [
     { value: "tudo", label: "Tudo" },
-    { value: "market", label: "⚡ Market Zuppi" },
+    { value: "market", label: "⚡ Market Zup" },
     { value: "coletiva", label: "👥 Compra coletiva" },
     { value: "concluidas", label: "Concluídas" },
     { value: "economia", label: "Economia" },
@@ -68,7 +68,7 @@ export function BuyerReportsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-800">Relatório mensal</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Acompanhe suas compras Market Zuppi e coletivas por mês.</p>
+            <p className="text-sm text-gray-400 mt-0.5">Acompanhe suas compras Market Zup e coletivas por mês.</p>
           </div>
           <div className="flex gap-2">
             <select value={month} onChange={e => setMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 text-sm">
@@ -121,7 +121,7 @@ export function BuyerReportsPage() {
           if (rows.length === 0) return null;
           return (
             <section>
-              {tab === "tudo" && <h2 className="text-sm font-bold text-gray-500 mb-2">⚡ Market Zuppi</h2>}
+              {tab === "tudo" && <h2 className="text-sm font-bold text-gray-500 mb-2">⚡ Market Zup</h2>}
               <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead>

@@ -104,7 +104,7 @@ export function AuthPage() {
 
           {/* Painel esquerdo */}
           <section className="bg-orange-50 border border-orange-200 rounded-2xl p-6 space-y-5">
-            <img src="/assets/zuppi-logo-light.png" alt="Zuppi logo" className="h-12 w-auto" />
+            <img src="/assets/zup-logo-light.png" alt="Zup logo" className="h-12 w-auto" />
             <div>
               <p className="text-sm font-semibold text-orange-700 uppercase">Área do comprador</p>
               <h1 className="text-3xl font-bold">Compre mais, pague menos</h1>
@@ -191,7 +191,7 @@ export function AuthPage() {
 
         {/* Painel esquerdo */}
         <section className="bg-gray-950 text-white rounded-2xl p-6 space-y-5">
-          <img src="/assets/zuppi-logo-dark.png" alt="Zuppi logo" className="h-12 w-auto" />
+          <img src="/assets/zup-logo-dark.png" alt="Zup logo" className="h-12 w-auto" />
           <div>
             <p className="text-sm font-semibold text-orange-400 uppercase">Área do fornecedor</p>
             <h1 className="text-3xl font-bold">Venda mais, com mais previsibilidade</h1>
@@ -262,7 +262,11 @@ export function AuthPage() {
               </select>
               <select required name="planoFornecedor" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300 bg-white">
                 <option value="gratuito">Plano gratuito</option>
+<<<<<<< HEAD
                 <option value="assinante">Assinante Zuppi</option>
+=======
+                <option value="assinante">Assinante Zup</option>
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
               </select>
             </div>
             {registerError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3">{registerError}</p>}

@@ -40,7 +40,7 @@ export function InstallBanner() {
         <span className="text-white font-black text-lg">Z</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-800">Instale o app Zuppi</p>
+        <p className="text-sm font-semibold text-gray-800">Instale o app Zup</p>
         <p className="text-xs text-gray-500">Acesso rápido no seu celular</p>
       </div>
       <button onClick={handleInstall} className="btn-primary text-xs py-1.5 px-3 flex-shrink-0">

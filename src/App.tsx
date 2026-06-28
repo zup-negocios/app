@@ -21,8 +21,11 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { SupplierCreateOfferPage, SupplierDashboardPage, SupplierOfferDetailPage, SupplierPreOrdersPage } from "./pages/SupplierPages";
 import { SupplierOffersPage, SupplierPreOrderDetailPage } from "./pages/SupplierOffersPage";
 import { SupplierClientsReportPage, SupplierPurchasesReportPage } from "./pages/SupplierReportsPage";
+import { SupplierSalesPage } from "./pages/SupplierSalesPage";
+import { SupportPage } from "./pages/SupportPage";
 import { TutorialPage } from "./pages/TutorialPage";
 import { ViabilitySimulatorPage } from "./pages/ViabilitySimulatorPage";
+import { WhatsAppSetupPage } from "./pages/WhatsAppSetupPage";
 
 export default function App() {
   return (
@@ -51,6 +54,7 @@ export default function App() {
           <Route path="/comprador/minhas-compras" element={<BuyerPurchasesPage />} />
           <Route path="/comprador/minhas-compras/:id" element={<BuyerPurchaseDetailPage />} />
           <Route path="/comprador/relatorio" element={<BuyerReportsPage />} />
+          <Route path="/comprador/suporte" element={<SupportPage />} />
           <Route path="/comprador/pedidos" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/comprador/ofertas-participando" element={<Navigate to="/comprador/minhas-compras" replace />} />
           <Route path="/comprador/compras-realizadas" element={<Navigate to="/comprador/minhas-compras" replace />} />
@@ -64,11 +68,14 @@ export default function App() {
           <Route path="/fornecedor/relatorio-clientes" element={<SupplierClientsReportPage />} />
           <Route path="/fornecedor/relatorio-compras" element={<SupplierPurchasesReportPage />} />
           <Route path="/fornecedor/simulador" element={<ViabilitySimulatorPage />} />
+          <Route path="/fornecedor/minhas-vendas" element={<SupplierSalesPage />} />
+          <Route path="/fornecedor/suporte" element={<SupportPage />} />
           <Route path="/avaliacoes" element={<RatingsPage />} />
           <Route path="/dados-cadastrais" element={<ProfilePage />} />
           <Route path="/configuracoes" element={<SettingsPage />} />
           <Route path="/tutorial" element={<TutorialPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/whatsapp-setup" element={<WhatsAppSetupPage />} />
           <Route path="/gestao" element={<GestaoPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

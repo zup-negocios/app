@@ -34,7 +34,7 @@ export function SupplierClientsReportPage() {
           <h1 className="text-xl font-bold text-gray-800">Relatório de clientes</h1>
           <button className="btn-primary" onClick={() => window.print()}>Imprimir / Salvar PDF</button>
         </div>
-        {!canSeeDetails && <div className="bg-white rounded-2xl border border-gray-100 p-5 text-gray-600 text-sm">Para acessar os dados completos dos clientes, ative sua assinatura Zuppi.</div>}
+        {!canSeeDetails && <div className="bg-white rounded-2xl border border-gray-100 p-5 text-gray-600 text-sm">Para acessar os dados completos dos clientes, ative sua assinatura Zup.</div>}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-auto">
           <table className="w-full min-w-[920px] text-sm">
             <thead>
@@ -69,7 +69,7 @@ type ReportTab = "geral" | "market" | "coletiva" | "concluidos" | "nao_cumpriu";
 
 const REPORT_TAB_LABELS: { value: ReportTab; label: string }[] = [
   { value: "geral", label: "Visão geral" },
-  { value: "market", label: "⚡ Market Zuppi" },
+  { value: "market", label: "⚡ Market Zup" },
   { value: "coletiva", label: "👥 Compra coletiva" },
   { value: "concluidos", label: "Vendas concluídas" },
   { value: "nao_cumpriu", label: "Clientes não cumpriram" },
@@ -135,7 +135,7 @@ export function SupplierPurchasesReportPage() {
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <p className="text-2xl font-bold text-orange-600">{currency(totalMarket)}</p>
-            <p className="text-xs text-gray-500 mt-1">⚡ Market Zuppi em {monthLabel(month)}</p>
+            <p className="text-xs text-gray-500 mt-1">⚡ Market Zup em {monthLabel(month)}</p>
             <p className="text-xs text-gray-400">{marketRows.length} ordens</p>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 p-5">

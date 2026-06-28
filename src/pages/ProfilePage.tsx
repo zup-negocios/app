@@ -17,7 +17,7 @@ export function ProfilePage() {
       <section className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold">Dados cadastrais</h1>
-          <p className="text-gray-600">Informacoes principais da conta e reputacao dentro da Zuppi.</p>
+          <p className="text-gray-600">Informacoes principais da conta e reputacao dentro da Zup.</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="card p-4"><p className="text-sm text-gray-500">Empresa</p><p className="font-bold">{profile.companyName}</p></div>

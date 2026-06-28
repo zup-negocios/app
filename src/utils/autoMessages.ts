@@ -1,7 +1,17 @@
+<<<<<<< HEAD
 import { sendViaEvolution } from "./evolutionConfig";
 
 const sentMessages: any[] = [];
 
+=======
+import type { BuyerProfile, SupplierProfile, Offer, Reservation, MarketOrder } from "../types";
+import { sendViaEvolution } from "./evolutionConfig";
+
+// Armazenar mensagens automáticas enviadas
+const sentMessages: any[] = [];
+
+// Salvar mensagem no localStorage
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 function saveSentMessage(msg: any) {
   sentMessages.push({
     ...msg,
@@ -9,6 +19,10 @@ function saveSentMessage(msg: any) {
     id: Math.random().toString(36).slice(2),
   });
 
+<<<<<<< HEAD
+=======
+  // Persistir em localStorage
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   try {
     localStorage.setItem("zup_auto_messages", JSON.stringify(sentMessages));
   } catch (e) {
@@ -16,7 +30,14 @@ function saveSentMessage(msg: any) {
   }
 }
 
+<<<<<<< HEAD
 export function onBuyerSignup(buyer: any) {
+=======
+/**
+ * Quando um comprador se cadastra
+ */
+export function onBuyerSignup(buyer: BuyerProfile) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `Bem-vindo à Zup! 🎉
 
 Você agora faz parte de nossa comunidade de compras coletivas.
@@ -31,6 +52,10 @@ Aproveite as melhores ofertas! 🛍️`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
+=======
+  // Enviar via Twilio
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
@@ -41,7 +66,14 @@ Aproveite as melhores ofertas! 🛍️`;
   });
 }
 
+<<<<<<< HEAD
 export function onSupplierSignup(supplier: any, password: string) {
+=======
+/**
+ * Quando um fornecedor se cadastra
+ */
+export function onSupplierSignup(supplier: SupplierProfile, password: string) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `Bem-vindo à Zup! 🚀
 
 Sua conta foi criada com sucesso!
@@ -57,6 +89,10 @@ Suporte: gestao.zup@gmail.com`;
   console.log(`Para: ${supplier.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
+=======
+  // Enviar via Twilio
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   sendViaEvolution(supplier.whatsapp, msg);
 
   saveSentMessage({
@@ -67,7 +103,18 @@ Suporte: gestao.zup@gmail.com`;
   });
 }
 
+<<<<<<< HEAD
 export function onClientImmediatePurchase(buyer: any, offer: any, order: any) {
+=======
+/**
+ * Quando cliente faz venda imediata
+ */
+export function onClientImmediatePurchase(
+  buyer: BuyerProfile,
+  offer: Offer,
+  order: MarketOrder
+) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `✅ Sua compra foi realizada!
 
 📦 ${offer.product}
@@ -82,6 +129,10 @@ Obrigado por comprar com a Zup! 🙏`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
+=======
+  // Enviar via Twilio
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
@@ -92,7 +143,18 @@ Obrigado por comprar com a Zup! 🙏`;
   });
 }
 
+<<<<<<< HEAD
 export function onClientCollectiveReservation(buyer: any, offer: any, reservation: any) {
+=======
+/**
+ * Quando cliente faz reserva coletiva
+ */
+export function onClientCollectiveReservation(
+  buyer: BuyerProfile,
+  offer: Offer,
+  reservation: Reservation
+) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const progress = offer.targetQuantity
     ? ((reservation.quantity) / offer.targetQuantity) * 100
     : 0;
@@ -113,6 +175,10 @@ Fique ligado! 👀`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
+=======
+  // Enviar via Twilio
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
@@ -123,7 +189,19 @@ Fique ligado! 👀`;
   });
 }
 
+<<<<<<< HEAD
 export function onCollectiveCompleted(buyer: any, offer: any, totalQty: number, totalAmount: number) {
+=======
+/**
+ * Quando compra coletiva é finalizada
+ */
+export function onCollectiveCompleted(
+  buyer: BuyerProfile,
+  offer: Offer,
+  totalQty: number,
+  totalAmount: number
+) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `🎉 PARABÉNS! Sua compra coletiva foi finalizada!
 
 📦 ${offer.product}
@@ -138,8 +216,11 @@ Obrigado por fazer parte desta compra! 🙏`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
   sendViaEvolution(buyer.whatsapp, msg);
 
+=======
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   saveSentMessage({
     type: "buyer_collective_completed",
     to: buyer.whatsapp,
@@ -148,7 +229,14 @@ Obrigado por fazer parte desta compra! 🙏`;
   });
 }
 
+<<<<<<< HEAD
 export function onClientSupportRequest(buyer: any) {
+=======
+/**
+ * Quando cliente solicita suporte
+ */
+export function onClientSupportRequest(buyer: BuyerProfile) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `📞 Olá! Recebemos sua solicitação!
 
 Nossa equipe já está analisando seu caso e em breve responderemos com a solução.
@@ -161,8 +249,11 @@ Obrigado por sua paciência! 🙏`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
   sendViaEvolution(buyer.whatsapp, msg);
 
+=======
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   saveSentMessage({
     type: "buyer_support",
     to: buyer.whatsapp,
@@ -171,7 +262,14 @@ Obrigado por sua paciência! 🙏`;
   });
 }
 
+<<<<<<< HEAD
 export function onSupplierSupportRequest(supplier: any) {
+=======
+/**
+ * Quando fornecedor solicita suporte
+ */
+export function onSupplierSupportRequest(supplier: SupplierProfile) {
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   const msg = `📞 Olá! Recebemos sua solicitação!
 
 Nossa equipe já está analisando seu caso e em breve responderemos com a solução.
@@ -184,8 +282,11 @@ Obrigado por sua paciência! 🙏`;
   console.log(`Para: ${supplier.whatsapp}`);
   console.log(msg);
 
+<<<<<<< HEAD
   sendViaEvolution(supplier.whatsapp, msg);
 
+=======
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
   saveSentMessage({
     type: "supplier_support",
     to: supplier.whatsapp,
@@ -194,6 +295,12 @@ Obrigado por sua paciência! 🙏`;
   });
 }
 
+<<<<<<< HEAD
+=======
+/**
+ * Obter histórico de mensagens automáticas
+ */
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 export function getAutoMessages() {
   try {
     const stored = localStorage.getItem("zup_auto_messages");

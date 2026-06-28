@@ -69,7 +69,7 @@ export function CardOferta({ offer }: { offer: Offer }) {
             )}
             {!hasMarket && !hasTiers && (
               <div>
-                <p className="text-[10px] text-gray-400 uppercase font-medium">Preço Zuppi</p>
+                <p className="text-[10px] text-gray-400 uppercase font-medium">Preço Zup</p>
                 <p className="text-base font-black text-gray-800">{currency(offer.zuppiPrice)}<span className="text-xs font-normal text-gray-400">/{offer.unit}</span></p>
               </div>
             )}

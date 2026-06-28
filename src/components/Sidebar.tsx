@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, BarChart2,
   Settings, PlusCircle, Sliders, Crown, Headphones,
-  ChevronRight, Users, Zap, LogOut, Shield,
+  ChevronRight, Users, Zap, LogOut, Shield, TrendingUp,
 } from "lucide-react";
 import { useAppState } from "./AppProvider";
 
@@ -21,6 +21,7 @@ const buyerNav: NavItem[] = [
   { to: "/comprador/compra-coletiva", label: "Compra coletiva", icon: Users },
   { to: "/comprador/minhas-compras", label: "Minhas compras", icon: ShoppingCart },
   { to: "/comprador/relatorio", label: "Relatórios", icon: BarChart2 },
+  { to: "/comprador/suporte", label: "Suporte", icon: Headphones },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -28,9 +29,11 @@ const supplierNav: NavItem[] = [
   { to: "/fornecedor", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/fornecedor/ofertas", label: "Minhas ofertas", icon: Package },
   { to: "/fornecedor/criar-oferta", label: "Criar oferta", icon: PlusCircle },
+  { to: "/fornecedor/minhas-vendas", label: "Minhas vendas", icon: TrendingUp },
   { to: "/fornecedor/pedidos", label: "Pedidos", icon: ShoppingCart },
   { to: "/fornecedor/simulador", label: "Simulador", icon: Sliders },
   { to: "/fornecedor/relatorio-compras", label: "Relatórios", icon: BarChart2 },
+  { to: "/fornecedor/suporte", label: "Suporte", icon: Headphones },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -41,10 +44,10 @@ const adminNav: NavItem[] = [
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
-function ZuppiLogo() {
+function ZupLogo() {
   return (
     <Link to="/" className="flex items-center px-5 py-4 border-b border-gray-100 hover:opacity-90 transition-opacity">
-      <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-8 w-auto" />
+      <img src="/assets/zup-logo-dark.png" alt="Zup" className="h-8 w-auto" />
     </Link>
   );
 }
@@ -58,7 +61,7 @@ export function Sidebar({ role }: { role: Role }) {
 
   return (
     <aside className="hidden md:flex flex-col w-[220px] min-h-screen bg-white border-r border-gray-100 shadow-[1px_0_0_0_#f3f4f6] flex-shrink-0">
-      <ZuppiLogo />
+      <ZupLogo />
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map(({ to, label, icon: Icon, exact }, i) => {
@@ -104,16 +107,6 @@ export function Sidebar({ role }: { role: Role }) {
             </Link>
           </div>
         )}
-
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <Headphones size={13} className="text-gray-500" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-gray-700 truncate">Precisa de ajuda?</p>
-            <p className="text-[10px] text-gray-400 truncate">Fale com nosso suporte</p>
-          </div>
-        </div>
 
         <button
           onClick={() => { logout(); navigate("/"); }}

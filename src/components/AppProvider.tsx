@@ -2,6 +2,8 @@ import { createContext, useContext, useMemo, useState } from "react";
 import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
 import { bootstrapStorage, store } from "../utils/storage";
 import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
+import { sendCollectiveOrderMessage, sendMetaAchievedMessage, sendImmediateOrderMessage } from "../utils/whatsappService";
+import { onBuyerSignup, onSupplierSignup, onClientImmediatePurchase, onClientCollectiveReservation } from "../utils/autoMessages";
 
 interface AppState {
   buyers: BuyerProfile[];
@@ -105,6 +107,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...buyers, next];
         setBuyers(all);
         store.setBuyers(all);
+        // Enviar mensagem de boas-vindas
+        onBuyerSignup(next);
         return next;
       },
       addSupplier: (data) => {
@@ -112,6 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...suppliers, next];
         setSuppliers(all);
         store.setSuppliers(all);
+        // Enviar mensagem com dados de acesso
+        onSupplierSignup(next, data.password);
         return next;
       },
       addOffer: (data) => {
@@ -187,6 +193,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             : item,
         );
         syncOffers(allOffers, allReservations);
+
+        // Enviar mensagem automática ao cliente
+        const newReservation = allReservations[allReservations.length - 1];
+        onClientCollectiveReservation(buyer, offer, newReservation);
+
+        // Enviar notificação WhatsApp ao fornecedor
+        const newReservedQty = offer.reservedQty + quantity;
+        sendCollectiveOrderMessage(offer, newReservedQty, supplier);
+
+        // Verificar se meta foi atingida
+        const targetQty = offer.targetQuantity || 0;
+        if (newReservedQty >= targetQty && offer.reservedQty < targetQty) {
+          // Meta acabou de ser atingida
+          const totalAmount = allReservations
+            .filter(r => r.offerId === offerId)
+            .reduce((sum, r) => sum + r.totalAmount, 0);
+          sendMetaAchievedMessage(
+            offer,
+            newReservedQty,
+            totalAmount,
+            allReservations.filter(r => r.offerId === offerId).length,
+            supplier
+          );
+        }
+
         return { ok: true, message: "Sua intenção de compra foi registrada! Quando a oferta encerrar, você sera avisado sobre o preço final e a ordem gerada." };
       },
       createMarketOrder: (offerId, buyerId, quantity, buyerType) => {
@@ -222,6 +253,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...marketOrders, newOrder];
         setMarketOrders(all);
         store.setMarketOrders(all);
+
+        // Enviar mensagem automática ao cliente
+        onClientImmediatePurchase(buyer, offer, newOrder);
+
+        // Enviar notificação WhatsApp ao fornecedor (venda imediata)
+        sendImmediateOrderMessage(offer, quantity, totalAmount, buyer.companyName, supplier);
+
         return { ok: true, message: "Ordem de compra gerada! O fornecedor foi notificado e dara sequencia a negociacao.", orderId };
       },
       updateMarketOrderStatus: (orderId, status) => {

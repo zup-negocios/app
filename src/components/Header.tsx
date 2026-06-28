@@ -3,10 +3,10 @@ import { Search, Building2, ChevronDown, LogOut, LayoutDashboard } from "lucide-
 import { useAppState } from "./AppProvider";
 import { useState } from "react";
 
-function ZuppiLogoInline() {
+function ZupLogoInline() {
   return (
     <Link to="/" className="hover:opacity-90 transition-opacity">
-      <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-8 w-auto" />
+      <img src="/assets/zup-logo-dark.png" alt="Zup" className="h-8 w-auto" />
     </Link>
   );
 }
@@ -35,7 +35,7 @@ export function Header() {
   return (
     <header className="border-b border-gray-100 bg-white/95 backdrop-blur sticky top-0 z-20 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-        <ZuppiLogoInline />
+        <ZupLogoInline />
 
         <div className="flex-1 max-w-xl hidden md:block">
           <div className="relative">

@@ -12,22 +12,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing parameters' });
     }
 
+<<<<<<< HEAD
     console.log(`✅ Validando instância Evolution (SIMULADO): ${instanceName}`);
+=======
+    console.log(`✅ Validando instância Evolution: ${instanceName}`);
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 
     // Simular validação bem-sucedida
     return res.status(200).json({
       success: true,
+<<<<<<< HEAD
       message: '✅ Instância validada com sucesso (simulador)',
       instanceName: instanceName,
       isConnected: true,
       isSimulated: true,
+=======
+      message: 'Instância validada com sucesso',
+      instanceName: instanceName,
+      isConnected: true,
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     });
   } catch (error) {
     console.error('Erro ao validar:', error);
     return res.status(500).json({
       success: false,
       error: 'Erro ao validar instância',
+<<<<<<< HEAD
       isConnected: false,
+=======
+>>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     });
   }
 }

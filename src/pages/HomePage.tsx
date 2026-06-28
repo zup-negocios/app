@@ -56,7 +56,7 @@ const STEPS = [
 
 const BUYER_BENEFITS = [
   { icon: TrendingDown, title: "Preços até 40% menores", desc: "Preços de atacado sem precisar comprar em grandes volumes sozinho." },
-  { icon: Shield, title: "Compra organizada e segura", desc: "Pedidos documentados, fornecedores verificados pela Zuppi." },
+  { icon: Shield, title: "Compra organizada e segura", desc: "Pedidos documentados, fornecedores verificados pela Zup." },
   { icon: Clock, title: "Oferta por tempo limitado", desc: "Aproveite enquanto a meta não é atingida." },
   { icon: Store, title: "Ideal para pequenos negócios", desc: "Padarias, restaurantes, petshops e muito mais." },
 ];
@@ -105,7 +105,7 @@ export function HomePage() {
             <span className="text-orange-500">coletivo.</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed">
-            A Zuppi conecta fornecedores e compradores profissionais em compras coletivas que geram mais volume, melhores preços e mais oportunidades.
+            A Zup conecta fornecedores e compradores profissionais em compras coletivas que geram mais volume, melhores preços e mais oportunidades.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/auth?type=buyer" className="btn-primary text-base px-6 py-3">
@@ -258,7 +258,7 @@ export function HomePage() {
       {/* ─── SOCIAL PROOF ─── */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-2xl font-black text-gray-900 text-center mb-8">O que dizem sobre a Zuppi</h2>
+          <h2 className="text-2xl font-black text-gray-900 text-center mb-8">O que dizem sobre a Zup</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {[
               { name: "Carlos Souza", company: "Padaria Pão Bom", text: "Economizei 30% na compra de farinha. Em 3 dias a meta estava batida!", stars: 5 },
@@ -358,7 +358,7 @@ export function HomePage() {
           ))}
         </div>
         <div className="max-w-6xl mx-auto px-4 mt-8 pt-8 border-t border-gray-800 text-xs text-center">
-          © 2026 Zuppi. Todos os direitos reservados.
+          © 2026 Zup. Todos os direitos reservados.
         </div>
       </footer>
     </div>

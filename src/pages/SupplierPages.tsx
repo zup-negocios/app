@@ -484,7 +484,7 @@ function MarketIntelPanel({ normalPrice }: { normalPrice: number }) {
       </div>
 
       <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
-        <p className="text-xs text-gray-500 mb-0.5">Preço sugerido Zuppi</p>
+        <p className="text-xs text-gray-500 mb-0.5">Preço sugerido Zup</p>
         <div className="flex items-end justify-between gap-2">
           <p className="text-2xl font-bold text-orange-600">{currency(suggested)}</p>
           <span className="text-[10px] font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -723,14 +723,14 @@ export function SupplierCreateOfferPage() {
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input type="checkbox" checked={marketEnabled} onChange={e => setMarketEnabled(e.target.checked)} className="w-4 h-4 accent-orange-500" />
                   <div>
-                    <p className="font-bold text-gray-800 text-sm flex items-center gap-1.5">⚡ Market Zuppi <span className="text-[10px] font-normal text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">Compra imediata</span></p>
+                    <p className="font-bold text-gray-800 text-sm flex items-center gap-1.5">⚡ Market Zup <span className="text-[10px] font-normal text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">Compra imediata</span></p>
                     <p className="text-xs text-gray-500">Comprador adquire sem depender de meta coletiva.</p>
                   </div>
                 </label>
                 {marketEnabled && (
                   <div className="grid sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="label-base">Preço Market Zuppi</label>
+                      <label className="label-base">Preço Market Zup</label>
                       <input name="marketPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full"
                         defaultValue={normalPrice > 0 ? String((normalPrice * 0.97).toFixed(2).replace(".", ",")) : ""} />
                     </div>
@@ -804,7 +804,7 @@ export function SupplierCreateOfferPage() {
                           </tbody>
                         </table>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1.5">Dica: o preço de 100% deve ser o menor de todos. O valor mais baixo das faixas ativas será o preço Zuppi exibido.</p>
+                      <p className="text-xs text-gray-400 mt-1.5">Dica: o preço de 100% deve ser o menor de todos. O valor mais baixo das faixas ativas será o preço Zup exibido.</p>
                     </div>
                   </div>
                 )}
@@ -865,7 +865,7 @@ export function SupplierCreateOfferPage() {
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
-                  <p className="text-[11px] text-gray-400 leading-relaxed mt-1">A Zuppi atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed mt-1">A Zup atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
                 </div>
                 <div>
                   <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
@@ -1091,7 +1091,7 @@ const STATUS_BADGE: Record<string, string> = {
 function whatsappLink(phone: string, supplierName: string, product: string, qty: number, unit: string) {
   const cleaned = phone.replace(/\D/g, "");
   const number = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
-  const msg = encodeURIComponent(`Olá, aqui é da ${supplierName}. Recebemos sua ordem pela Zuppi referente ao produto ${product}, quantidade ${qty} ${unit}. Vamos seguir com a finalização da compra?`);
+  const msg = encodeURIComponent(`Olá, aqui é da ${supplierName}. Recebemos sua ordem pela Zup referente ao produto ${product}, quantidade ${qty} ${unit}. Vamos seguir com a finalização da compra?`);
   return `https://wa.me/${number}?text=${msg}`;
 }
 
@@ -1170,7 +1170,7 @@ function ClientModal({ buyer, order, supplierName, onClose }: ClientModalProps) 
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resumo do pedido</p>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><p className="text-xs text-gray-400">Produto</p><p className="font-semibold text-gray-800">{order.product}</p></div>
-              <div><p className="text-xs text-gray-400">Tipo</p><p className="font-medium text-gray-700">{order.purchaseMode === "market" ? "⚡ Market Zuppi" : "👥 Compra coletiva"}</p></div>
+              <div><p className="text-xs text-gray-400">Tipo</p><p className="font-medium text-gray-700">{order.purchaseMode === "market" ? "⚡ Market Zup" : "👥 Compra coletiva"}</p></div>
               <div><p className="text-xs text-gray-400">Quantidade</p><p className="font-medium text-gray-700">{order.quantity.toLocaleString("pt-BR")} {order.unit}</p></div>
               <div><p className="text-xs text-gray-400">Preço unit.</p><p className="font-medium text-gray-700">{currency(order.unitPrice)}</p></div>
               <div><p className="text-xs text-gray-400">Valor total</p><p className="font-bold text-orange-600">{currency(order.totalAmount)}</p></div>
@@ -1375,7 +1375,7 @@ export function SupplierPreOrdersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-800">Pedidos</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Ordens Market Zuppi e intenções coletivas.</p>
+            <p className="text-sm text-gray-400 mt-0.5">Ordens Market Zup e intenções coletivas.</p>
           </div>
           <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="input-base w-44 text-sm">
             {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

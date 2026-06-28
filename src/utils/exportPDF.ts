@@ -83,7 +83,7 @@ export async function exportOfferReportPDF(data: PDFReportData): Promise<void> {
     ["Categoria", data.category],
     ["Fornecedor", data.supplierName],
     ["Preço normal", fmt(data.normalPrice)],
-    ["Preço Zuppi", fmt(data.zuppiPrice)],
+    ["Preço Zup", fmt(data.zuppiPrice)],
   ];
   const colW = (W - M * 2) / 3;
   infoItems.forEach(([label, value], i) => {
@@ -204,7 +204,7 @@ export async function exportOfferReportPDF(data: PDFReportData): Promise<void> {
     pdf.setPage(i);
     pdf.setFontSize(7);
     pdf.setTextColor(...gray);
-    pdf.text("Zuppi — O futuro das vendas B2B é coletivo.", M, 292);
+    pdf.text("Zup — O futuro das vendas B2B é coletivo.", M, 292);
     pdf.text(`Página ${i} de ${pageCount}`, W - M, 292, { align: "right" });
   }
 

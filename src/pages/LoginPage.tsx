@@ -20,7 +20,7 @@ export function LoginPage() {
     setLoading(true);
     await new Promise(r => setTimeout(r, 350));
     const em = email.trim().toLowerCase();
-    if (em === "gestor@zuppi.com.br") { navigate("/gestao"); return; }
+    if (em === "gestor@zup.com.br") { navigate("/gestao"); return; }
     if (em === "admin@zuppi.com.br") { navigate("/admin"); return; }
     const role = em.includes("fornecedor") || em.includes("moinho") || em.includes("higieniza") ? "supplier" : "buyer";
     const result = login(role, email, password);
@@ -30,7 +30,7 @@ export function LoginPage() {
   };
 
   const quickLogin = (em: string, pw: string, path: string) => {
-    if (em === "gestor@zuppi.com.br") { navigate("/gestao"); return; }
+    if (em === "gestor@zup.com.br") { navigate("/gestao"); return; }
     const role = path.includes("comprador") ? "buyer" : "supplier";
     const result = login(role, em, pw);
     if (result.ok) navigate(path);
@@ -42,7 +42,7 @@ export function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/assets/zuppi-logo-dark.png" alt="Zuppi" className="h-12 w-auto mx-auto" />
+          <img src="/assets/zup-logo-dark.png" alt="Zup" className="h-12 w-auto mx-auto" />
           <p className="text-gray-500 text-sm mt-2">O futuro das vendas B2B é coletivo.</p>
         </div>
 
@@ -105,7 +105,7 @@ export function LoginPage() {
             {[
               { label: "Comprador demo", sub: "joao@bompreco.com", em: "joao@bompreco.com", pw: "123456", path: "/comprador", dot: "bg-blue-400" },
               { label: "Fornecedor demo", sub: "ana@moinhobrasil.com", em: "ana@moinhobrasil.com", pw: "123456", path: "/fornecedor", dot: "bg-green-400" },
-              { label: "Gestão Zuppi", sub: "gestor@zuppi.com.br", em: "gestor@zuppi.com.br", pw: "", path: "/gestao", dot: "bg-orange-400" },
+              { label: "Gestão Zup", sub: "gestor@zup.com.br", em: "gestor@zup.com.br", pw: "", path: "/gestao", dot: "bg-orange-400" },
             ].map(({ label, sub, em, pw, path, dot }) => (
               <button key={label} onClick={() => quickLogin(em, pw, path)}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/40 transition-all text-left group">

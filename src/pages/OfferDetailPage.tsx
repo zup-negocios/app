@@ -11,7 +11,7 @@ import {
   getMarketPrice, getNextTier, offerProgress,
 } from "../utils/business";
 
-const FACILITADORA_NOTICE = "A Zuppi atua como plataforma facilitadora de conexão comercial. Pagamento, emissão fiscal, retirada, entrega e demais condições operacionais devem ser tratados diretamente entre comprador e fornecedor.";
+const FACILITADORA_NOTICE = "A Zup atua como plataforma facilitadora de conexão comercial. Pagamento, emissão fiscal, retirada, entrega e demais condições operacionais devem ser tratados diretamente entre comprador e fornecedor.";
 
 export function OfferDetailPage() {
   const { id } = useParams();
@@ -108,7 +108,7 @@ export function OfferDetailPage() {
           >
             <div className="flex items-center gap-2 mb-1">
               <Zap size={16} className="text-orange-500" />
-              <span className="font-bold text-sm text-gray-800">Market Zuppi</span>
+              <span className="font-bold text-sm text-gray-800">Market Zup</span>
             </div>
             <p className="text-xl font-black text-orange-600">{currency(marketPrice)}<span className="text-xs font-normal text-gray-400">/{offer.unit}</span></p>
             <p className="text-xs text-gray-400 mt-1">Compra imediata, sem depender de meta</p>
@@ -136,7 +136,7 @@ export function OfferDetailPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Zap size={18} className="text-orange-500" />
-            <h2 className="font-bold text-gray-800">Comprar agora — Market Zuppi</h2>
+            <h2 className="font-bold text-gray-800">Comprar agora — Market Zup</h2>
           </div>
           <p className="text-sm text-gray-500">Compra imediata, sem depender da meta coletiva.</p>
           <div className="grid sm:grid-cols-2 gap-2 text-sm">

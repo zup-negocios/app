@@ -230,7 +230,7 @@ export function ViabilitySimulatorPage() {
                 </div>
                 <div>
                   <label className="label-base flex items-center gap-1">
-                    Taxa operacional Zuppi <Info size={12} className="text-gray-400" />
+                    Taxa operacional Zup <Info size={12} className="text-gray-400" />
                   </label>
                   <input value={form.zuppiTax} onChange={e => set("zuppiTax", e.target.value)} inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full" />
                 </div>
