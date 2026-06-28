@@ -3,10 +3,10 @@ import { DashboardLayout } from "../components/DashboardLayout";
 import { Save, Edit2, MessageSquare, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
-  getWhatsAppConfig,
-  connectWhatsApp,
-  disconnectWhatsApp,
-} from "../utils/whatsappConfig";
+  getTwilioConfig,
+  saveTwilioConfig,
+  testTwilioConnection,
+} from "../utils/twilioConfig";
 
 const DEFAULT_TEMPLATES = {
   buyer_signup: {
@@ -150,39 +150,60 @@ export function WhatsAppSetupPage() {
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [accountSid, setAccountSid] = useState("");
+  const [authToken, setAuthToken] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectedPhone, setConnectedPhone] = useState("");
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
-    const config = getWhatsAppConfig();
-    if (config.isConnected) {
-      setIsConnected(true);
-      setConnectedPhone(config.phoneNumber);
+    const config = getTwilioConfig();
+    if (config.isConfigured) {
+      setIsConfigured(true);
+      setAccountSid(config.accountSid);
+      setAuthToken(config.authToken);
+      setPhoneNumber(config.phoneNumber);
     }
   }, []);
 
-  const handleConnect = () => {
-    if (!phoneNumber) {
-      toast.error("Digite um número de WhatsApp");
+  const handleTestConnection = async () => {
+    if (!accountSid || !authToken || !phoneNumber) {
+      toast.error("Preencha todos os campos");
       return;
     }
 
-    if (connectWhatsApp(phoneNumber)) {
-      setConnectedPhone(phoneNumber);
-      setIsConnected(true);
-      setPhoneNumber("");
-      toast.success(`✅ WhatsApp conectado: ${phoneNumber}`);
-    } else {
-      toast.error("Número inválido. Use formato: 41999999999");
+    setIsTesting(true);
+    try {
+      const success = await testTwilioConnection();
+      if (success) {
+        saveTwilioConfig({
+          accountSid,
+          authToken,
+          phoneNumber,
+        });
+        setIsConfigured(true);
+        toast.success("✅ Twilio conectado com sucesso!");
+      } else {
+        toast.error("❌ Credenciais inválidas");
+      }
+    } catch (error) {
+      toast.error("Erro ao testar conexão");
+    } finally {
+      setIsTesting(false);
     }
   };
 
   const handleDisconnect = () => {
-    disconnectWhatsApp();
-    setIsConnected(false);
-    setConnectedPhone("");
-    toast.success("WhatsApp desconectado");
+    saveTwilioConfig({
+      accountSid: "",
+      authToken: "",
+      phoneNumber: "",
+    });
+    setIsConfigured(false);
+    setAccountSid("");
+    setAuthToken("");
+    setPhoneNumber("");
+    toast.success("Twilio desconectado");
   };
 
   const startEdit = (key: string) => {
@@ -243,17 +264,17 @@ export function WhatsAppSetupPage() {
               Conectar WhatsApp
             </h2>
 
-            {isConnected ? (
+            {isConfigured ? (
               <div className="space-y-6">
                 <div className="p-6 bg-green-50 rounded-xl border-2 border-green-200">
                   <div className="flex items-center gap-3 mb-4">
                     <Check size={32} className="text-green-600" />
                     <div>
                       <p className="font-bold text-green-900">
-                        ✅ WhatsApp Conectado
+                        ✅ Twilio Conectado
                       </p>
                       <p className="text-sm text-green-700 mt-1">
-                        Número: +55 {connectedPhone}
+                        Número WhatsApp: +55 {phoneNumber}
                       </p>
                     </div>
                   </div>
@@ -285,47 +306,74 @@ export function WhatsAppSetupPage() {
               <div className="space-y-6">
                 <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
                   <h3 className="font-bold text-blue-900 mb-3">
-                    📱 Conectar número de WhatsApp
+                    🔑 Configurar Twilio WhatsApp
                   </h3>
                   <p className="text-sm text-blue-800 mb-4">
-                    Digite o número de WhatsApp que será usado como central de
-                    gestão. As mensagens automáticas serão enviadas deste número.
+                    Insira suas credenciais Twilio para enviar mensagens automáticas via WhatsApp.
                   </p>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número WhatsApp (com DDD)
+                        Account SID
+                      </label>
+                      <input
+                        type="password"
+                        value={accountSid}
+                        onChange={(e) => setAccountSid(e.target.value)}
+                        placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Auth Token
+                      </label>
+                      <input
+                        type="password"
+                        value={authToken}
+                        onChange={(e) => setAuthToken(e.target.value)}
+                        placeholder="your_auth_token_here"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Número WhatsApp Twilio
                       </label>
                       <input
                         type="tel"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="41999999999"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 text-lg"
+                        placeholder="whatsapp:+5541999999999"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
                       />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Formato: AACCCCCCCCC (sem símbolos)
-                        <br />
-                        Exemplo: 41 + 99999-9999
+                      <p className="text-xs text-gray-500 mt-1">
+                        Formato: whatsapp:+XXYYYYYYYYYY
                       </p>
                     </div>
 
                     <button
-                      onClick={handleConnect}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      onClick={handleTestConnection}
+                      disabled={isTesting}
+                      className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                       <MessageSquare size={18} />
-                      Conectar WhatsApp
+                      {isTesting ? "Testando..." : "Conectar Twilio"}
                     </button>
                   </div>
                 </div>
 
                 <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                  <p className="text-sm text-yellow-900">
-                    ⚠️ Este número receberá todas as notificações automáticas do
-                    sistema. Use um número de gestão dedicado.
-                  </p>
+                  <p className="text-sm text-yellow-900 font-medium">Onde encontrar as credenciais:</p>
+                  <ol className="text-xs text-yellow-800 mt-2 space-y-1 ml-4">
+                    <li>1. Acesse <a href="https://console.twilio.com" target="_blank" rel="noopener" className="text-orange-600 font-bold">console.twilio.com</a></li>
+                    <li>2. Account SID está no Dashboard</li>
+                    <li>3. Auth Token está em Account → API Keys</li>
+                    <li>4. Número WhatsApp está em WhatsApp Sandbox</li>
+                  </ol>
                 </div>
               </div>
             )}
