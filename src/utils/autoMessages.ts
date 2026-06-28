@@ -1,5 +1,5 @@
 import type { BuyerProfile, SupplierProfile, Offer, Reservation, MarketOrder } from "../types";
-import { sendViatwilio } from "./twilioConfig";
+import { sendViaEvolution } from "./evolutionConfig";
 
 // Armazenar mensagens automáticas enviadas
 const sentMessages: any[] = [];
@@ -39,7 +39,7 @@ Aproveite as melhores ofertas! 🛍️`;
   console.log(msg);
 
   // Enviar via Twilio
-  sendViatwilio(buyer.whatsapp, msg);
+  sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
     type: "buyer_signup",
@@ -69,7 +69,7 @@ Suporte: gestao.zup@gmail.com`;
   console.log(msg);
 
   // Enviar via Twilio
-  sendViatwilio(supplier.whatsapp, msg);
+  sendViaEvolution(supplier.whatsapp, msg);
 
   saveSentMessage({
     type: "supplier_signup",
@@ -102,7 +102,7 @@ Obrigado por comprar com a Zup! 🙏`;
   console.log(msg);
 
   // Enviar via Twilio
-  sendViatwilio(buyer.whatsapp, msg);
+  sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
     type: "buyer_immediate_purchase",
@@ -141,7 +141,7 @@ Fique ligado! 👀`;
   console.log(msg);
 
   // Enviar via Twilio
-  sendViatwilio(buyer.whatsapp, msg);
+  sendViaEvolution(buyer.whatsapp, msg);
 
   saveSentMessage({
     type: "buyer_collective_reserved",

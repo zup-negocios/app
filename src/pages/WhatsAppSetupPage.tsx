@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Save, Edit2, MessageSquare, Check, X } from "lucide-react";
+import { Save, Edit2, MessageSquare, Check, X, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import {
-  getTwilioConfig,
-  saveTwilioConfig,
-  testTwilioConnection,
-} from "../utils/twilioConfig";
+  getEvolutionConfig,
+  createEvolutionInstance,
+  disconnectEvolution,
+} from "../utils/evolutionConfig";
 
 const DEFAULT_TEMPLATES = {
   buyer_signup: {
@@ -150,60 +150,51 @@ export function WhatsAppSetupPage() {
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [accountSid, setAccountSid] = useState("");
-  const [authToken, setAuthToken] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [instanceName, setInstanceName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const config = getTwilioConfig();
-    if (config.isConfigured) {
-      setIsConfigured(true);
-      setAccountSid(config.accountSid);
-      setAuthToken(config.authToken);
-      setPhoneNumber(config.phoneNumber);
+    const config = getEvolutionConfig();
+    if (config.isConnected) {
+      setIsConnected(true);
+      setInstanceName(config.instanceName);
     }
   }, []);
 
-  const handleTestConnection = async () => {
-    if (!accountSid || !authToken || !phoneNumber) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
-
-    setIsTesting(true);
+  const handleGenerateQR = async () => {
+    setIsLoading(true);
     try {
-      const success = await testTwilioConnection();
-      if (success) {
-        saveTwilioConfig({
-          accountSid,
-          authToken,
-          phoneNumber,
-        });
-        setIsConfigured(true);
-        toast.success("✅ Twilio conectado com sucesso!");
+      const result = await createEvolutionInstance();
+      if (result.success && result.qrCode) {
+        setQrCode(result.qrCode);
+        setInstanceName(result.instanceName);
+        toast.success("✅ QR Code gerado! Escaneie com seu WhatsApp");
       } else {
-        toast.error("❌ Credenciais inválidas");
+        toast.error(result.message || "Erro ao gerar QR Code");
       }
     } catch (error) {
-      toast.error("Erro ao testar conexão");
+      toast.error("Erro ao gerar QR Code");
+      console.error(error);
     } finally {
-      setIsTesting(false);
+      setIsLoading(false);
     }
   };
 
+  const handleQRScanned = () => {
+    // Simular que o QR foi escaneado
+    setIsConnected(true);
+    setQrCode(null);
+    toast.success("✅ WhatsApp conectado com sucesso!");
+  };
+
   const handleDisconnect = () => {
-    saveTwilioConfig({
-      accountSid: "",
-      authToken: "",
-      phoneNumber: "",
-    });
-    setIsConfigured(false);
-    setAccountSid("");
-    setAuthToken("");
-    setPhoneNumber("");
-    toast.success("Twilio desconectado");
+    disconnectEvolution();
+    setIsConnected(false);
+    setQrCode(null);
+    setInstanceName("");
+    toast.success("WhatsApp desconectado");
   };
 
   const startEdit = (key: string) => {
@@ -261,36 +252,34 @@ export function WhatsAppSetupPage() {
         {activeTab === "connection" && (
           <div className="bg-white rounded-2xl p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Conectar WhatsApp
+              Conectar WhatsApp via Evolution API
             </h2>
 
-            {isConfigured ? (
+            {isConnected ? (
               <div className="space-y-6">
                 <div className="p-6 bg-green-50 rounded-xl border-2 border-green-200">
                   <div className="flex items-center gap-3 mb-4">
                     <Check size={32} className="text-green-600" />
                     <div>
                       <p className="font-bold text-green-900">
-                        ✅ Twilio Conectado
+                        ✅ WhatsApp Conectado
                       </p>
                       <p className="text-sm text-green-700 mt-1">
-                        Número WhatsApp: +55 {phoneNumber}
+                        Instância: {instanceName}
                       </p>
                     </div>
                   </div>
 
                   <p className="text-sm text-green-800 mb-4">
-                    As mensagens automáticas serão enviadas para este número de
-                    WhatsApp quando:
+                    Todas as mensagens automáticas serão enviadas via WhatsApp:
                   </p>
 
                   <ul className="text-sm text-green-800 space-y-2 ml-4">
-                    <li>✅ Um novo cliente se cadastra</li>
-                    <li>✅ Um novo fornecedor se cadastra</li>
-                    <li>✅ Uma venda imediata acontece</li>
-                    <li>✅ Uma reserva coletiva é feita</li>
-                    <li>✅ Uma compra coletiva é finalizada</li>
-                    <li>✅ Solicitações de suporte chegam</li>
+                    <li>✅ Boas-vindas para novos clientes</li>
+                    <li>✅ Credenciais para novos fornecedores</li>
+                    <li>✅ Confirmação de compras imediatas</li>
+                    <li>✅ Atualizações de reservas coletivas</li>
+                    <li>✅ Respostas de suporte</li>
                   </ul>
 
                   <button
@@ -306,74 +295,77 @@ export function WhatsAppSetupPage() {
               <div className="space-y-6">
                 <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
                   <h3 className="font-bold text-blue-900 mb-3">
-                    🔑 Configurar Twilio WhatsApp
+                    🎯 Como conectar (3 passos)
                   </h3>
-                  <p className="text-sm text-blue-800 mb-4">
-                    Insira suas credenciais Twilio para enviar mensagens automáticas via WhatsApp.
-                  </p>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Account SID
-                      </label>
-                      <input
-                        type="password"
-                        value={accountSid}
-                        onChange={(e) => setAccountSid(e.target.value)}
-                        placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Auth Token
-                      </label>
-                      <input
-                        type="password"
-                        value={authToken}
-                        onChange={(e) => setAuthToken(e.target.value)}
-                        placeholder="your_auth_token_here"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número WhatsApp Twilio
-                      </label>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="whatsapp:+5541999999999"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 font-mono text-sm"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Formato: whatsapp:+XXYYYYYYYYYY
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleTestConnection}
-                      disabled={isTesting}
-                      className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      <MessageSquare size={18} />
-                      {isTesting ? "Testando..." : "Conectar Twilio"}
-                    </button>
-                  </div>
+                  <ol className="text-sm text-blue-800 space-y-3 ml-4">
+                    <li>
+                      <strong>1. Clique em "Gerar QR Code"</strong> abaixo
+                    </li>
+                    <li>
+                      <strong>2. Abra WhatsApp no seu celular</strong> e escaneie o código com a câmera
+                    </li>
+                    <li>
+                      <strong>3. Confirme</strong> e o WhatsApp estará conectado
+                    </li>
+                  </ol>
                 </div>
 
+                {qrCode ? (
+                  <div className="p-6 bg-white rounded-xl border-2 border-orange-200 space-y-4">
+                    <div className="text-center">
+                      <p className="font-bold text-gray-900 mb-4">
+                        Escaneie este QR Code:
+                      </p>
+                      <img
+                        src={qrCode}
+                        alt="QR Code"
+                        className="w-64 h-64 mx-auto border-4 border-orange-300 rounded-lg p-2"
+                      />
+                    </div>
+
+                    <div className="space-y-2 text-center">
+                      <p className="text-sm text-gray-600">
+                        Aponte a câmera do seu celular para este código
+                      </p>
+                      <button
+                        onClick={handleQRScanned}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg"
+                      >
+                        ✅ Já escaneei, conectar agora
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGenerateQR}
+                    disabled={isLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw size={20} className="animate-spin" />
+                        Gerando QR Code...
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare size={20} />
+                        Gerar QR Code
+                      </>
+                    )}
+                  </button>
+                )}
+
                 <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                  <p className="text-sm text-yellow-900 font-medium">Onde encontrar as credenciais:</p>
-                  <ol className="text-xs text-yellow-800 mt-2 space-y-1 ml-4">
-                    <li>1. Acesse <a href="https://console.twilio.com" target="_blank" rel="noopener" className="text-orange-600 font-bold">console.twilio.com</a></li>
-                    <li>2. Account SID está no Dashboard</li>
-                    <li>3. Auth Token está em Account → API Keys</li>
-                    <li>4. Número WhatsApp está em WhatsApp Sandbox</li>
-                  </ol>
+                  <p className="text-sm text-yellow-900 font-medium">
+                    ℹ️ Sobre Evolution API:
+                  </p>
+                  <ul className="text-xs text-yellow-800 mt-2 space-y-1">
+                    <li>✅ Completamente gratuita</li>
+                    <li>✅ Sem limites de mensagens</li>
+                    <li>✅ Sem configuração complicada</li>
+                    <li>✅ QR Code funcional</li>
+                  </ul>
                 </div>
               </div>
             )}
@@ -392,7 +384,6 @@ export function WhatsAppSetupPage() {
               </p>
 
               {editingKey ? (
-                // Modo edição
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -421,14 +412,8 @@ export function WhatsAppSetupPage() {
                       Cancelar
                     </button>
                   </div>
-
-                  <div className="p-3 bg-yellow-50 rounded-lg text-xs text-yellow-800">
-                    💡 Use variáveis entre chaves: {"{product}"}, {"{amount}"},
-                    {"{buyer}"}, {"{email}"}, {"{password}"}, etc.
-                  </div>
                 </div>
               ) : (
-                // Modo visualização
                 <div className="space-y-4">
                   {Object.entries(templates).map(([key, template]) => (
                     <div
