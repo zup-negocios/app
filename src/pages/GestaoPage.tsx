@@ -71,8 +71,8 @@ function GestaoSidebar({ section, setSection }: { section: GestaoSection; setSec
     <aside className="hidden md:flex flex-col w-[220px] min-h-screen bg-gray-900 flex-shrink-0">
       <div className="px-5 py-4 border-b border-gray-700/60">
         <div className="flex items-center gap-2 mb-2">
-          <img src="/assets/zuppi-icon.png" alt="Zup" className="h-8 w-8 rounded-lg" />
-          <span className="text-xl font-black text-white tracking-tight">uppi</span>
+          <img src="/assets/zup-icon.png" alt="Zup" className="h-8 w-8 rounded-lg" />
+          <span className="text-xl font-black text-white tracking-tight">Zup</span>
         </div>
         <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full tracking-wide">GESTÃO INTERNA</span>
       </div>
