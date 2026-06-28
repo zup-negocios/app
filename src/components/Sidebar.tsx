@@ -107,16 +107,6 @@ export function Sidebar({ role }: { role: Role }) {
           </div>
         )}
 
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <Headphones size={13} className="text-gray-500" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-gray-700 truncate">Precisa de ajuda?</p>
-            <p className="text-[10px] text-gray-400 truncate">Fale com nosso suporte</p>
-          </div>
-        </div>
-
         <button
           onClick={() => { logout(); navigate("/"); }}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
