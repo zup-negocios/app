@@ -1,10 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } from '@whiskeysockets/baileys';
 import * as fs from 'fs';
 import * as path from 'path';
 
 let sock: any = null;
 let lastQR: string = '';
+let isInitializing = false;
+
+function cleanAuthDirectory(authDir: string) {
+  try {
+    if (fs.existsSync(authDir)) {
+      const files = fs.readdirSync(authDir);
+      files.forEach(file => {
+        const filePath = path.join(authDir, file);
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.log(`Erro ao deletar ${file}`);
+        }
+      });
+      console.log('✅ Autenticação anterior limpa');
+    }
+  } catch (e) {
+    console.log('Aviso: não foi possível limpar autenticação anterior');
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -13,7 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Se já está conectado, retornar status
-    if (sock && sock.user) {
+    if (sock && sock.user && sock.user.id) {
+      console.log('✅ Usuário já conectado');
       return res.status(200).json({
         connected: true,
         user: {
@@ -23,16 +44,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Se já tem QR code armazenado, retornar
-    if (lastQR) {
+    // Se já tem QR code, retornar
+    if (lastQR && !isInitializing) {
+      console.log('📱 Retornando QR code');
       return res.status(200).json({
         connected: false,
         qr: lastQR,
       });
     }
 
-    // Inicializar conexão e esperar QR code
+    // Se já está inicializando, aguardar
+    if (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (lastQR) {
+        return res.status(200).json({
+          connected: false,
+          qr: lastQR,
+        });
+      }
+    }
+
+    isInitializing = true;
     const authDir = path.join('/tmp', 'zup-baileys-auth-info');
+
+    console.log('🔄 Iniciando nova conexão WhatsApp...');
+    cleanAuthDirectory(authDir);
+
     if (!fs.existsSync(authDir)) {
       fs.mkdirSync(authDir, { recursive: true });
     }
@@ -42,112 +79,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     sock = makeWASocket({
       auth: state,
       printQRInTerminal: false,
-      browser: ['Zup', 'Chrome', '1.0.0'],
+      browser: Browsers.ubuntu('Chrome'),
+      shouldSyncHistoryMessage: false,
     });
 
     let qrGenerated = false;
+    let connectionOpen = false;
 
-    sock.ev.on('connection.update', (update: any) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr && !qrGenerated) {
-        lastQR = qr;
-        qrGenerated = true;
-        console.log('📱 QR code gerado');
-      }
-
-      if (connection === 'close') {
-        const shouldReconnect =
-          (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
-        const errorMessage = (lastDisconnect?.error as any)?.message || '';
-
-        console.log('WhatsApp desconectado:', errorMessage);
-
-        if (shouldReconnect) {
-          console.log('Reconectando em 5s...');
-          setTimeout(() => {
-            sock = null;
-            lastQR = '';
-            qrGenerated = false;
-          }, 5000);
-        }
-      } else if (connection === 'open') {
-        console.log('✅ Conectado ao WhatsApp!');
-        lastQR = '';
-      }
-    });
-
-    sock.ev.on('connection.update', (update: any) => {
-      if (update.lastDisconnect?.error) {
-        const error = update.lastDisconnect.error;
-        console.error('Erro de conexão:', error);
-      }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    // Esperar QR code ou conexão bem-sucedida (máx 30s)
     return await new Promise((resolve) => {
-      const timeout = setTimeout(() => {
-        if (lastQR) {
-          resolve(
-            res.status(200).json({
-              connected: false,
-              qr: lastQR,
-              message: 'Escaneie o QR code com seu WhatsApp',
-            })
-          );
-        } else if (sock && sock.user) {
-          resolve(
-            res.status(200).json({
-              connected: true,
-              user: {
-                id: sock.user.id,
-                name: sock.user.name,
-              },
-            })
-          );
-        } else {
-          resolve(
-            res.status(500).json({
-              error: 'Timeout ao gerar QR code',
-            })
-          );
+      sock.ev.on('connection.update', (update: any) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          lastQR = qr;
+          qrGenerated = true;
+          console.log('✅ QR code gerado!');
         }
-      }, 30000);
 
-      const checkInterval = setInterval(() => {
-        if (lastQR || (sock && sock.user)) {
-          clearTimeout(timeout);
-          clearInterval(checkInterval);
+        if (connection === 'open') {
+          connectionOpen = true;
+          console.log('✅ Conectado!');
+        }
 
-          if (sock && sock.user) {
-            resolve(
-              res.status(200).json({
-                connected: true,
-                user: {
-                  id: sock.user.id,
-                  name: sock.user.name,
-                },
-              })
-            );
+        if (connection === 'close') {
+          const errorCode = (lastDisconnect?.error as any)?.output?.statusCode;
+          console.log('Conexão fechada:', errorCode);
+
+          if (errorCode !== DisconnectReason.loggedOut) {
+            console.log('Tentando reconectar...');
           } else {
-            resolve(
-              res.status(200).json({
-                connected: false,
-                qr: lastQR,
-                message: 'Escaneie o QR code com seu WhatsApp',
-              })
-            );
+            sock = null;
           }
         }
-      }, 500);
+      });
+
+      sock.ev.on('creds.update', saveCreds);
+
+      // Timeout de 40 segundos
+      setTimeout(() => {
+        isInitializing = false;
+
+        if (connectionOpen && sock?.user?.id) {
+          resolve(res.status(200).json({
+            connected: true,
+            user: {
+              id: sock.user.id,
+              name: sock.user.name,
+            },
+          }));
+        } else if (lastQR) {
+          resolve(res.status(200).json({
+            connected: false,
+            qr: lastQR,
+          }));
+        } else {
+          resolve(res.status(200).json({
+            connected: false,
+            qr: null,
+            error: 'Timeout. WhatsApp pode estar bloqueando. Tente novamente em alguns minutos.',
+          }));
+        }
+      }, 40000);
+
+      // Verificar a cada segundo
+      const checkInterval = setInterval(() => {
+        if (connectionOpen && sock?.user?.id) {
+          clearInterval(checkInterval);
+          isInitializing = false;
+          resolve(res.status(200).json({
+            connected: true,
+            user: {
+              id: sock.user.id,
+              name: sock.user.name,
+            },
+          }));
+        } else if (lastQR && qrGenerated) {
+          // Manter esperando por conexão, não retornar QR ainda
+        }
+      }, 1000);
     });
   } catch (error) {
-    console.error('Erro ao gerar QR code:', error);
-    return res.status(500).json({
-      error: 'Erro ao gerar QR code',
-      details: (error as any).message,
+    isInitializing = false;
+    console.error('Erro:', (error as any).message);
+    return res.status(200).json({
+      connected: false,
+      error: 'Erro na conexão. WhatsApp bloqueou a sessão. Tente novamente em 10 minutos.',
     });
   }
 }
