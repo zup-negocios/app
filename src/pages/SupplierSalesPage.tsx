@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
-import { Download, Filter, TrendingUp, ShoppingCart, FileText } from "lucide-react";
+import { Download, Filter, TrendingUp, ShoppingCart } from "lucide-react";
 import { generatePedidoPDF, downloadPDF } from "../utils/pdfGenerator";
 import toast from "react-hot-toast";
 
@@ -30,7 +30,7 @@ export function SupplierSalesPage() {
 
       const totalQty = offerReservations.reduce((sum, r) => sum + r.quantity, 0);
       const totalAmount = offerReservations.reduce((sum, r) => sum + r.totalAmount, 0);
-      const metaProgress = (totalQty / offer.targetQuantity) * 100;
+      const metaProgress = offer.targetQuantity ? (totalQty / offer.targetQuantity) * 100 : 0;
       const status = offer.status === "ativa" ? "ativa" : "concluida";
 
       return [{
