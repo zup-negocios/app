@@ -154,16 +154,6 @@ export const supplierSeeds: SupplierProfile[] = [
   },
 ];
 
-function offer(data: Omit<Offer, "approved" | "editStatus" | "createdAt" | "reservedAmount">): Offer {
-  return {
-    ...data,
-    approved: data.status === "ativa" || data.status === "meta_atingida",
-    editStatus: "edicao_bloqueada",
-    createdAt: "2026-06-09",
-    reservedAmount: data.reservedQty * data.zuppiPrice,
-  };
-}
-
 export const offerSeeds: Offer[] = [];
 
 const buyer1 = buyerSeeds[0];
