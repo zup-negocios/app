@@ -25,6 +25,7 @@ import { SupplierSalesPage } from "./pages/SupplierSalesPage";
 import { SupportPage } from "./pages/SupportPage";
 import { TutorialPage } from "./pages/TutorialPage";
 import { ViabilitySimulatorPage } from "./pages/ViabilitySimulatorPage";
+import { WhatsAppSetupPage } from "./pages/WhatsAppSetupPage";
 
 export default function App() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/configuracoes" element={<SettingsPage />} />
           <Route path="/tutorial" element={<TutorialPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/whatsapp-setup" element={<WhatsAppSetupPage />} />
           <Route path="/gestao" element={<GestaoPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

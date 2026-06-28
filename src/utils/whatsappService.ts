@@ -7,30 +7,13 @@ interface WhatsAppMessage {
   type: "coletiva_nova" | "coletiva_meta" | "imediata";
 }
 
-// Armazenar histórico de mensagens (em produção usar banco de dados)
+// Armazenar histórico de mensagens
 const messageHistory: WhatsAppMessage[] = [];
 
-// Configuração do Twilio (adicionar variáveis de ambiente em produção)
-const TWILIO_ENABLED = false; // Mudar para true quando ativar Twilio
-const TWILIO_ACCOUNT_SID = import.meta.env.REACT_APP_TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = import.meta.env.REACT_APP_TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = import.meta.env.REACT_APP_TWILIO_PHONE_NUMBER;
-
-/**
- * Formata número de telefone para formato WhatsApp (+55XX9XXXX-XXXX)
- */
-function formatPhoneToWhatsApp(phone: string): string {
-  // Remove caracteres especiais
-  const cleaned = phone.replace(/\D/g, "");
-
-  // Se já tem +55, retorna direto
-  if (cleaned.startsWith("55")) {
-    return `+${cleaned}`;
-  }
-
-  // Adiciona +55
-  return `+55${cleaned}`;
-}
+// Detectar ambiente
+const API_BASE_URL = typeof window !== 'undefined'
+  ? window.location.origin
+  : 'https://zup-negocios.vercel.app';
 
 /**
  * Enviar mensagem de nova compra coletiva
@@ -107,71 +90,53 @@ Próximas vendas chegando! 🚀`;
 }
 
 /**
- * Função base para enviar mensagem WhatsApp
+ * Função base para enviar mensagem WhatsApp via Baileys
  */
 async function sendWhatsAppMessage(
   phone: string,
   message: string,
   type: WhatsAppMessage["type"]
 ): Promise<boolean> {
-  const whatsappPhone = formatPhoneToWhatsApp(phone);
+  const cleanedPhone = phone.replace(/\D/g, "");
   const timestamp = new Date().toISOString();
 
-  // Registrar no histórico (simulação local)
+  // Registrar no histórico
   messageHistory.push({
-    to: whatsappPhone,
+    to: cleanedPhone,
     message,
     timestamp,
     type,
   });
 
   try {
-    if (TWILIO_ENABLED && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
-      // Usar Twilio em produção
-      return await sendViaTwilio(whatsappPhone, message);
-    } else {
-      // Modo simulação (desenvolvimento)
-      console.log("📱 [WhatsApp Simulado]");
-      console.log(`Para: ${whatsappPhone}`);
-      console.log(`Tipo: ${type}`);
-      console.log(`Mensagem:\n${message}`);
-      console.log("---");
+    const response = await fetch(`${API_BASE_URL}/api/whatsapp/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone: cleanedPhone,
+        message,
+      }),
+    });
 
-      // Simular sucesso
+    if (response.ok) {
+      const data = await response.json();
+      console.log("✅ WhatsApp enviado:", data);
       return true;
+    } else {
+      const errorData = await response.json();
+      console.warn("⚠️ Erro ao enviar WhatsApp:", errorData);
+
+      // Se não está conectado, mostra aviso mas não bloqueia o fluxo
+      if (errorData.qrNeeded) {
+        console.log("📱 QR code necessário! Acesse /admin/whatsapp-setup para conectar");
+      }
+
+      return false;
     }
   } catch (error) {
     console.error("Erro ao enviar WhatsApp:", error);
-    return false;
-  }
-}
-
-/**
- * Integração com Twilio (quando ativar)
- */
-async function sendViaTwilio(to: string, message: string): Promise<boolean> {
-  try {
-    // Exemplo usando fetch (adaptar conforme API do Twilio)
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization":
-            "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-        },
-        body: new URLSearchParams({
-          From: `whatsapp:${TWILIO_PHONE_NUMBER}`,
-          To: `whatsapp:${to}`,
-          Body: message,
-        }).toString(),
-      }
-    );
-
-    return response.ok;
-  } catch (error) {
-    console.error("Erro Twilio:", error);
     return false;
   }
 }
