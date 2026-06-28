@@ -3,6 +3,7 @@ import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus,
 import { bootstrapStorage, store } from "../utils/storage";
 import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
 import { sendCollectiveOrderMessage, sendMetaAchievedMessage, sendImmediateOrderMessage } from "../utils/whatsappService";
+import { onBuyerSignup, onSupplierSignup, onClientImmediatePurchase, onClientCollectiveReservation } from "../utils/autoMessages";
 
 interface AppState {
   buyers: BuyerProfile[];
@@ -106,6 +107,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...buyers, next];
         setBuyers(all);
         store.setBuyers(all);
+        // Enviar mensagem de boas-vindas
+        onBuyerSignup(next);
         return next;
       },
       addSupplier: (data) => {
@@ -113,6 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...suppliers, next];
         setSuppliers(all);
         store.setSuppliers(all);
+        // Enviar mensagem com dados de acesso
+        onSupplierSignup(next, data.password);
         return next;
       },
       addOffer: (data) => {
@@ -189,6 +194,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         );
         syncOffers(allOffers, allReservations);
 
+        // Enviar mensagem automática ao cliente
+        const newReservation = allReservations[allReservations.length - 1];
+        onClientCollectiveReservation(buyer, offer, newReservation);
+
         // Enviar notificação WhatsApp ao fornecedor
         const newReservedQty = offer.reservedQty + quantity;
         sendCollectiveOrderMessage(offer, newReservedQty, supplier);
@@ -244,6 +253,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...marketOrders, newOrder];
         setMarketOrders(all);
         store.setMarketOrders(all);
+
+        // Enviar mensagem automática ao cliente
+        onClientImmediatePurchase(buyer, offer, newOrder);
 
         // Enviar notificação WhatsApp ao fornecedor (venda imediata)
         sendImmediateOrderMessage(offer, quantity, totalAmount, buyer.companyName, supplier);
