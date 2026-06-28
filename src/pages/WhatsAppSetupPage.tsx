@@ -39,8 +39,8 @@ export function WhatsAppSetupPage() {
 
     fetchQR();
 
-    // Retentar a cada 5 segundos se não estiver conectado
-    const interval = setInterval(fetchQR, 5000);
+    // Retentar a cada 30 segundos (padrão WhatsApp Web)
+    const interval = setInterval(fetchQR, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -92,8 +92,19 @@ export function WhatsAppSetupPage() {
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle size={32} className="text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro na Conexão</h2>
+              <p className="text-gray-600 mb-6">{error}</p>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 text-left">
+                <p className="text-sm text-yellow-800 font-medium mb-2">💡 Dicas:</p>
+                <ul className="text-xs text-yellow-700 space-y-1">
+                  <li>• WhatsApp pode bloquear conexões temporariamente por segurança</li>
+                  <li>• Aguarde alguns minutos e tente novamente</li>
+                  <li>• Certifique-se de estar usando a conta correta do WhatsApp</li>
+                  <li>• Se o erro persistir, tente em outro dispositivo</li>
+                </ul>
+              </div>
+
               <button
                 onClick={() => window.location.reload()}
                 className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition-colors"
@@ -133,7 +144,7 @@ export function WhatsAppSetupPage() {
               </button>
 
               <p className="text-sm text-gray-500 mt-6">
-                O código QR é renovado a cada 5 segundos automaticamente
+                O código QR é renovado automaticamente a cada 30 segundos
               </p>
             </div>
           ) : null}

@@ -59,13 +59,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (connection === 'close') {
         const shouldReconnect =
           (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
+        const errorMessage = (lastDisconnect?.error as any)?.message || '';
+
+        console.log('WhatsApp desconectado:', errorMessage);
+
         if (shouldReconnect) {
-          console.log('Reconectando...');
-          sock = null;
+          console.log('Reconectando em 5s...');
+          setTimeout(() => {
+            sock = null;
+            lastQR = '';
+            qrGenerated = false;
+          }, 5000);
         }
       } else if (connection === 'open') {
         console.log('✅ Conectado ao WhatsApp!');
         lastQR = '';
+      }
+    });
+
+    sock.ev.on('connection.update', (update: any) => {
+      if (update.lastDisconnect?.error) {
+        const error = update.lastDisconnect.error;
+        console.error('Erro de conexão:', error);
       }
     });
 
