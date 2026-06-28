@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Save, Edit2, MessageSquare } from "lucide-react";
+import { Save, Edit2, MessageSquare, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  getWhatsAppConfig,
+  connectWhatsApp,
+  disconnectWhatsApp,
+} from "../utils/whatsappConfig";
 
 const DEFAULT_TEMPLATES = {
   buyer_signup: {
@@ -139,34 +144,45 @@ Obrigado por sua paciência! 🙏`,
 };
 
 export function WhatsAppSetupPage() {
-  const [activeTab, setActiveTab] = useState<"connection" | "templates">("connection");
+  const [activeTab, setActiveTab] = useState<"connection" | "templates">(
+    "connection"
+  );
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectedPhone, setConnectedPhone] = useState("");
 
-  const generateQRCode = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/whatsapp/generate-qr", {
-        method: "POST",
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.qr) {
-        setQrCode(data.qr);
-        toast.success("✅ QR Code gerado! Escaneie com seu WhatsApp");
-      } else {
-        toast.error("Erro ao gerar QR code");
-      }
-    } catch (error) {
-      toast.error("Erro na conexão");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    const config = getWhatsAppConfig();
+    if (config.isConnected) {
+      setIsConnected(true);
+      setConnectedPhone(config.phoneNumber);
     }
+  }, []);
+
+  const handleConnect = () => {
+    if (!phoneNumber) {
+      toast.error("Digite um número de WhatsApp");
+      return;
+    }
+
+    if (connectWhatsApp(phoneNumber)) {
+      setConnectedPhone(phoneNumber);
+      setIsConnected(true);
+      setPhoneNumber("");
+      toast.success(`✅ WhatsApp conectado: ${phoneNumber}`);
+    } else {
+      toast.error("Número inválido. Use formato: 41999999999");
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnectWhatsApp();
+    setIsConnected(false);
+    setConnectedPhone("");
+    toast.success("WhatsApp desconectado");
   };
 
   const startEdit = (key: string) => {
@@ -191,7 +207,9 @@ export function WhatsAppSetupPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Configuração WhatsApp</h1>
-          <p className="text-gray-600 mt-2">Gerencie notificações e templates automáticos</p>
+          <p className="text-gray-600 mt-2">
+            Conecte WhatsApp e gerencie templates de mensagens automáticas
+          </p>
         </div>
 
         {/* Abas */}
@@ -204,7 +222,7 @@ export function WhatsAppSetupPage() {
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            🔗 Conexão
+            📱 Conexão
           </button>
           <button
             onClick={() => setActiveTab("templates")}
@@ -221,76 +239,96 @@ export function WhatsAppSetupPage() {
         {/* Aba: Conexão */}
         {activeTab === "connection" && (
           <div className="bg-white rounded-2xl p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Conectar WhatsApp</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Conectar WhatsApp
+            </h2>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Instruções */}
-              <div>
-                <h3 className="font-bold text-gray-800 mb-4">📱 Como conectar:</h3>
-                <ol className="space-y-3 text-sm text-gray-700">
-                  <li className="flex gap-3">
-                    <span className="font-bold text-orange-600">1.</span>
-                    <span>Acesse WhatsApp Web no computador</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-bold text-orange-600">2.</span>
-                    <span>Escaneie o código QR com seu celular</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-bold text-orange-600">3.</span>
-                    <span>Confirme o acesso no seu telefone</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-bold text-orange-600">4.</span>
-                    <span>A conexão estará ativa automaticamente</span>
-                  </li>
-                </ol>
+            {isConnected ? (
+              <div className="space-y-6">
+                <div className="p-6 bg-green-50 rounded-xl border-2 border-green-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Check size={32} className="text-green-600" />
+                    <div>
+                      <p className="font-bold text-green-900">
+                        ✅ WhatsApp Conectado
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Número: +55 {connectedPhone}
+                      </p>
+                    </div>
+                  </div>
 
-                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <p className="text-sm text-blue-900">
-                    ℹ️ As notificações serão enviadas automaticamente segundo os templates configurados.
+                  <p className="text-sm text-green-800 mb-4">
+                    As mensagens automáticas serão enviadas para este número de
+                    WhatsApp quando:
+                  </p>
+
+                  <ul className="text-sm text-green-800 space-y-2 ml-4">
+                    <li>✅ Um novo cliente se cadastra</li>
+                    <li>✅ Um novo fornecedor se cadastra</li>
+                    <li>✅ Uma venda imediata acontece</li>
+                    <li>✅ Uma reserva coletiva é feita</li>
+                    <li>✅ Uma compra coletiva é finalizada</li>
+                    <li>✅ Solicitações de suporte chegam</li>
+                  </ul>
+
+                  <button
+                    onClick={handleDisconnect}
+                    className="mt-6 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg flex items-center gap-2"
+                  >
+                    <X size={16} />
+                    Desconectar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
+                  <h3 className="font-bold text-blue-900 mb-3">
+                    📱 Conectar número de WhatsApp
+                  </h3>
+                  <p className="text-sm text-blue-800 mb-4">
+                    Digite o número de WhatsApp que será usado como central de
+                    gestão. As mensagens automáticas serão enviadas deste número.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Número WhatsApp (com DDD)
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="41999999999"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 text-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Formato: AACCCCCCCCC (sem símbolos)
+                        <br />
+                        Exemplo: 41 + 99999-9999
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleConnect}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <MessageSquare size={18} />
+                      Conectar WhatsApp
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <p className="text-sm text-yellow-900">
+                    ⚠️ Este número receberá todas as notificações automáticas do
+                    sistema. Use um número de gestão dedicado.
                   </p>
                 </div>
               </div>
-
-              {/* QR Code */}
-              <div className="flex flex-col items-center justify-center">
-                {qrCode ? (
-                  <>
-                    <div className="w-64 h-64 bg-white rounded-xl border-2 border-orange-300 p-2 flex items-center justify-center">
-                      <img src={qrCode} alt="QR Code" className="w-full h-full object-contain" />
-                    </div>
-                    <div className="mt-4 text-center">
-                      <p className="text-sm text-green-600 font-medium">✅ QR Code Ativo</p>
-                      <p className="text-xs text-gray-500 mt-1">Escaneie com seu WhatsApp agora</p>
-                    </div>
-                    <button
-                      onClick={() => setQrCode(null)}
-                      className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg"
-                    >
-                      Fechar QR Code
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-64 h-64 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <div className="text-center">
-                        <MessageSquare size={48} className="text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm">QR Code será exibido aqui</p>
-                        <p className="text-gray-400 text-xs mt-1">ao clicar em Ativar</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={generateQRCode}
-                      disabled={isLoading}
-                      className="mt-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                    >
-                      {isLoading ? "Gerando..." : "Ativar Conexão"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -298,8 +336,12 @@ export function WhatsAppSetupPage() {
         {activeTab === "templates" && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Templates Automáticos</h2>
-              <p className="text-gray-600 mb-6">Edite os templates de mensagens que serão enviados automaticamente</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Templates Automáticos
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Customize as mensagens que serão enviadas automaticamente
+              </p>
 
               {editingKey ? (
                 // Modo edição
@@ -333,20 +375,26 @@ export function WhatsAppSetupPage() {
                   </div>
 
                   <div className="p-3 bg-yellow-50 rounded-lg text-xs text-yellow-800">
-                    💡 Use as variáveis entre chaves para preencher automaticamente:
-                    <br />
-                    {"{product}"}, {"{quantity}"}, {"{amount}"}, {"{buyer}"}, {"{supplier}"}, {"{progress}"}, {"{target_quantity}"}, {"{total_amount}"}, etc.
+                    💡 Use variáveis entre chaves: {"{product}"}, {"{amount}"},
+                    {"{buyer}"}, {"{email}"}, {"{password}"}, etc.
                   </div>
                 </div>
               ) : (
                 // Modo visualização
                 <div className="space-y-4">
                   {Object.entries(templates).map(([key, template]) => (
-                    <div key={key} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-orange-200 transition-colors">
+                    <div
+                      key={key}
+                      className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-orange-200 transition-colors"
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-bold text-gray-900">{template.title}</h3>
-                          <p className="text-xs text-gray-600 mt-1">{template.description}</p>
+                          <h3 className="font-bold text-gray-900">
+                            {template.title}
+                          </h3>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {template.description}
+                          </p>
                         </div>
                         <button
                           onClick={() => startEdit(key)}
@@ -364,16 +412,6 @@ export function WhatsAppSetupPage() {
                   ))}
                 </div>
               )}
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-              <h3 className="font-bold text-blue-900 mb-3">ℹ️ Sobre os Templates</h3>
-              <ul className="text-sm text-blue-800 space-y-2">
-                <li>✅ Customize cada template conforme sua estratégia</li>
-                <li>✅ Use variáveis entre chaves para dados dinâmicos</li>
-                <li>✅ Emojis são totalmente suportados</li>
-                <li>✅ Os templates serão enviados automaticamente</li>
-              </ul>
             </div>
           </div>
         )}

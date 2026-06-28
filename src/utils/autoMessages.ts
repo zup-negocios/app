@@ -1,4 +1,5 @@
 import type { BuyerProfile, SupplierProfile, Offer, Reservation, MarketOrder } from "../types";
+import { sendWhatsAppMessage } from "./whatsappConfig";
 
 // Armazenar mensagens automáticas enviadas
 const sentMessages: any[] = [];
@@ -37,6 +38,9 @@ Aproveite as melhores ofertas! 🛍️`;
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
 
+  // Enviar via WhatsApp
+  sendWhatsAppMessage(buyer.whatsapp, msg);
+
   saveSentMessage({
     type: "buyer_signup",
     to: buyer.whatsapp,
@@ -63,6 +67,9 @@ Suporte: gestao.zup@gmail.com`;
   console.log(`📱 [AUTO MESSAGE] Fornecedor ${supplier.companyName}`);
   console.log(`Para: ${supplier.whatsapp}`);
   console.log(msg);
+
+  // Enviar via WhatsApp
+  sendWhatsAppMessage(supplier.whatsapp, msg);
 
   saveSentMessage({
     type: "supplier_signup",
@@ -93,6 +100,9 @@ Obrigado por comprar com a Zup! 🙏`;
   console.log(`📱 [AUTO MESSAGE] Cliente (Venda Imediata) ${buyer.companyName}`);
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
+
+  // Enviar via WhatsApp
+  sendWhatsAppMessage(buyer.whatsapp, msg);
 
   saveSentMessage({
     type: "buyer_immediate_purchase",
@@ -129,6 +139,9 @@ Fique ligado! 👀`;
   console.log(`📱 [AUTO MESSAGE] Cliente (Reserva Coletiva) ${buyer.companyName}`);
   console.log(`Para: ${buyer.whatsapp}`);
   console.log(msg);
+
+  // Enviar via WhatsApp
+  sendWhatsAppMessage(buyer.whatsapp, msg);
 
   saveSentMessage({
     type: "buyer_collective_reserved",
