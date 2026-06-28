@@ -143,6 +143,31 @@ export function WhatsAppSetupPage() {
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const generateQRCode = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/whatsapp/generate-qr", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.qr) {
+        setQrCode(data.qr);
+        toast.success("✅ QR Code gerado! Escaneie com seu WhatsApp");
+      } else {
+        toast.error("Erro ao gerar QR code");
+      }
+    } catch (error) {
+      toast.error("Erro na conexão");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const startEdit = (key: string) => {
     setEditingKey(key);
@@ -228,18 +253,42 @@ export function WhatsAppSetupPage() {
                 </div>
               </div>
 
-              {/* QR Code Placeholder */}
+              {/* QR Code */}
               <div className="flex flex-col items-center justify-center">
-                <div className="w-64 h-64 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <div className="text-center">
-                    <MessageSquare size={48} className="text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">QR Code será exibido aqui</p>
-                    <p className="text-gray-400 text-xs mt-1">quando ativado</p>
-                  </div>
-                </div>
-                <button className="mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg">
-                  Ativar Conexão
-                </button>
+                {qrCode ? (
+                  <>
+                    <div className="w-64 h-64 bg-white rounded-xl border-2 border-orange-300 p-2 flex items-center justify-center">
+                      <img src={qrCode} alt="QR Code" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-green-600 font-medium">✅ QR Code Ativo</p>
+                      <p className="text-xs text-gray-500 mt-1">Escaneie com seu WhatsApp agora</p>
+                    </div>
+                    <button
+                      onClick={() => setQrCode(null)}
+                      className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg"
+                    >
+                      Fechar QR Code
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-64 h-64 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center">
+                        <MessageSquare size={48} className="text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm">QR Code será exibido aqui</p>
+                        <p className="text-gray-400 text-xs mt-1">ao clicar em Ativar</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={generateQRCode}
+                      disabled={isLoading}
+                      className="mt-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                    >
+                      {isLoading ? "Gerando..." : "Ativar Conexão"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
