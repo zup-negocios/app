@@ -9,7 +9,7 @@ import { currency, lastMonthOptions, monthKey, monthLabel } from "../utils/busin
 import {
   Users, Building2, Tag, ShoppingCart, Target, TrendingUp, Clock,
   AlertTriangle, CheckCircle, ChevronRight, LogOut, LayoutDashboard,
-  FileText, DollarSign, Settings, Crown
+  FileText, DollarSign, Settings, Crown, MessageCircle
 } from "lucide-react";
 
 // ─── COUNTER ─────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ function AnimatedKpi({ value, label, isCurrency = false }: { value: number; labe
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 
-type GestaoSection = "dashboard" | "compradores" | "fornecedores" | "ofertas" | "negociacoes" | "financeiro" | "relatorios" | "configuracoes";
+type GestaoSection = "dashboard" | "compradores" | "fornecedores" | "ofertas" | "negociacoes" | "financeiro" | "relatorios" | "whatsapp" | "configuracoes";
 
 const NAV: { icon: React.ElementType; label: string; section: GestaoSection }[] = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
@@ -61,6 +61,7 @@ const NAV: { icon: React.ElementType; label: string; section: GestaoSection }[] 
   { icon: ShoppingCart, label: "Negociações", section: "negociacoes" },
   { icon: DollarSign, label: "Financeiro", section: "financeiro" },
   { icon: FileText, label: "Relatórios", section: "relatorios" },
+  { icon: MessageCircle, label: "WhatsApp", section: "whatsapp" },
   { icon: Settings, label: "Configurações", section: "configuracoes" },
 ];
 
@@ -210,7 +211,7 @@ export function GestaoPage() {
   const sectionLabel: Record<GestaoSection, string> = {
     dashboard: "Dashboard", compradores: "Compradores", fornecedores: "Fornecedores",
     ofertas: "Ofertas", negociacoes: "Negociações", financeiro: "Financeiro",
-    relatorios: "Relatórios", configuracoes: "Configurações",
+    relatorios: "Relatórios", whatsapp: "Configuração WhatsApp", configuracoes: "Configurações",
   };
 
   return (
@@ -379,17 +380,54 @@ export function GestaoPage() {
 
           {section === "relatorios" && (() => {
             const monthReservations = reservations.filter(r => monthKey(r.createdAt) === reportMonth);
-            const monthOffers = offers.filter(o => monthKey(o.createdAt) === reportMonth);
-            const monthTotal = monthReservations.reduce((a, r) => a + r.totalAmount, 0);
-            const monthBuyers = new Set(monthReservations.map(r => r.buyerId)).size;
-            const monthSuppliers = new Set(monthOffers.map(o => o.supplierId)).size;
+            const monthMarketOrders = marketOrders.filter(o => monthKey(o.createdAt) === reportMonth);
+
+            const monthTotalColetiva = monthReservations.reduce((a, r) => a + r.totalAmount, 0);
+            const monthTotalImediata = monthMarketOrders.reduce((a, o) => a + o.totalAmount, 0);
+            const monthTotal = monthTotalColetiva + monthTotalImediata;
+
+            const monthBuyersColetiva = new Set(monthReservations.map(r => r.buyerId)).size;
+            const monthBuyersImediata = new Set(monthMarketOrders.map(o => o.buyerId)).size;
+            const monthBuyers = monthBuyersColetiva + monthBuyersImediata;
+
+            const monthSuppliersColetiva = new Set(monthReservations.map(r => r.supplierId)).size;
+            const monthSuppliersImediata = new Set(monthMarketOrders.map(o => o.supplierId)).size;
+            const monthSuppliers = monthSuppliersColetiva + monthSuppliersImediata;
+
+            // Combinar ambos tipos de pedidos para a tabela
+            const allPedidos = [
+              ...monthReservations.map(r => ({
+                id: r.id,
+                type: "coletiva" as const,
+                product: r.product,
+                buyerName: r.buyerSnapshot.companyName,
+                supplierId: r.supplierId,
+                quantity: r.quantity,
+                unit: r.unit,
+                totalAmount: r.totalAmount,
+                createdAt: r.createdAt,
+                status: r.status,
+              })),
+              ...monthMarketOrders.map(o => ({
+                id: o.id,
+                type: "imediata" as const,
+                product: o.product,
+                buyerName: o.buyerSnapshot.companyName,
+                supplierId: o.supplierId,
+                quantity: o.quantity,
+                unit: o.unit,
+                totalAmount: o.totalAmount,
+                createdAt: o.createdAt,
+                status: o.status,
+              })),
+            ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
             return (
               <div className="space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-gray-800">Relatório mensal da plataforma</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Resultado consolidado de compradores e fornecedores por mês.</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Resultado consolidado de compradores e fornecedores por mês (Coletiva + Imediata).</p>
                   </div>
                   <select value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 text-sm">
                     {lastMonthOptions().map(m => (
@@ -399,37 +437,55 @@ export function GestaoPage() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <KpiCard title="Volume negociado" value={currency(monthTotal)} icon={DollarSign} color="orange" />
-                  <KpiCard title="Pedidos no mês" value={monthReservations.length} icon={ShoppingCart} color="purple" />
+                  <KpiCard title="Volume total" value={currency(monthTotal)} icon={DollarSign} color="orange" />
+                  <KpiCard title="Pedidos (Coletiva + Imediata)" value={monthReservations.length + monthMarketOrders.length} icon={ShoppingCart} color="purple" />
                   <KpiCard title="Compradores ativos" value={monthBuyers} icon={Users} color="blue" />
-                  <KpiCard title="Fornecedores com ofertas novas" value={monthSuppliers} icon={Building2} color="green" />
+                  <KpiCard title="Fornecedores ativos" value={monthSuppliers} icon={Building2} color="green" />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="card p-4">
+                    <p className="text-xs text-gray-500 font-medium">📦 Vendas Coletivas</p>
+                    <p className="text-2xl font-bold text-orange-600 mt-1">{currency(monthTotalColetiva)}</p>
+                    <p className="text-xs text-gray-400 mt-1">{monthReservations.length} pedidos</p>
+                  </div>
+                  <div className="card p-4">
+                    <p className="text-xs text-gray-500 font-medium">⚡ Market Zup (Imediatas)</p>
+                    <p className="text-2xl font-bold text-blue-600 mt-1">{currency(monthTotalImediata)}</p>
+                    <p className="text-xs text-gray-400 mt-1">{monthMarketOrders.length} pedidos</p>
+                  </div>
                 </div>
 
                 <div className="card">
                   <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-800">Pedidos em {monthLabel(reportMonth)}</h3>
+                    <h3 className="font-bold text-gray-800">Todos os pedidos em {monthLabel(reportMonth)}</h3>
                   </div>
                   <div className="overflow-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
-                        <tr>{["Produto", "Comprador", "Fornecedor", "Qtd", "Valor", "Data", "Status"].map(h => (
+                        <tr>{["Tipo", "Produto", "Comprador", "Fornecedor", "Qtd", "Valor", "Data", "Status"].map(h => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                         ))}</tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {monthReservations.length === 0 ? (
-                          <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Nenhum pedido neste mês.</td></tr>
-                        ) : monthReservations.map(r => {
-                          const sup = suppliers.find(s => s.id === r.supplierId);
+                        {allPedidos.length === 0 ? (
+                          <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Nenhum pedido neste mês.</td></tr>
+                        ) : allPedidos.map(p => {
+                          const sup = suppliers.find(s => s.id === p.supplierId);
                           return (
-                            <tr key={r.id} className="hover:bg-gray-50/50">
-                              <td className="px-4 py-3 font-medium">{r.product}</td>
-                              <td className="px-4 py-3 text-gray-600">{r.buyerSnapshot.companyName}</td>
+                            <tr key={p.id} className="hover:bg-gray-50/50">
+                              <td className="px-4 py-3">
+                                <span className={`text-xs font-bold px-2 py-1 rounded-full ${p.type === "coletiva" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
+                                  {p.type === "coletiva" ? "COLETIVA" : "IMEDIATA"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 font-medium">{p.product}</td>
+                              <td className="px-4 py-3 text-gray-600">{p.buyerName}</td>
                               <td className="px-4 py-3 text-gray-500">{sup?.companyName || "—"}</td>
-                              <td className="px-4 py-3">{r.quantity} {r.unit}</td>
-                              <td className="px-4 py-3 font-semibold text-orange-600">{currency(r.totalAmount)}</td>
-                              <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString("pt-BR")}</td>
-                              <td className="px-4 py-3"><span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{r.status.replace(/_/g, " ")}</span></td>
+                              <td className="px-4 py-3">{p.quantity} {p.unit}</td>
+                              <td className="px-4 py-3 font-semibold text-orange-600">{currency(p.totalAmount)}</td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">{new Date(p.createdAt).toLocaleDateString("pt-BR")}</td>
+                              <td className="px-4 py-3"><span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{p.status.replace(/_/g, " ")}</span></td>
                             </tr>
                           );
                         })}
@@ -444,6 +500,14 @@ export function GestaoPage() {
               </div>
             );
           })()}
+
+          {section === "whatsapp" && (
+            <iframe
+              src="/admin/whatsapp-setup"
+              style={{ width: "100%", height: "800px", border: "none", borderRadius: "16px" }}
+              title="WhatsApp Setup"
+            />
+          )}
 
           {section === "configuracoes" && (
             <div className="card p-12 text-center">
