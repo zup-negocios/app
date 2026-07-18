@@ -599,6 +599,7 @@ export function SupplierCreateOfferPage() {
     { percentage: 75, price: 0 },
     { percentage: 100, price: 0 },
   ]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
 
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
@@ -617,7 +618,7 @@ export function SupplierCreateOfferPage() {
     const targetQuantity = targetType === "quantity" ? parseDecimal(data.get("targetQuantity")) : undefined;
     const targetAmount = targetType === "amount" ? parseDecimal(data.get("targetAmount")) : undefined;
     const validTiers = tiers.filter(t => t.percentage > 0 && t.price > 0);
-    const collectiveMinQty = parseDecimal(data.get("collectiveMinQty")) || parseDecimal(data.get("minimumPurchasePerBuyer"));
+    const collectiveMinQty = parseDecimal(data.get("collectiveMinQty"));
     addOffer({
       supplierId: session.id,
       product: String(data.get("product")),
@@ -637,9 +638,10 @@ export function SupplierCreateOfferPage() {
       maxQty: parseDecimal(data.get("maxQty")) || undefined,
       deadline,
       region: String(data.get("region")),
-      paymentTerms: String(data.get("paymentTerms")),
+      paymentTerms: selectedPaymentMethods.join("; "),
       deliveryTime: String(data.get("deliveryTime")),
       notes: String(data.get("notes")),
+      shippingCost: parseDecimal(data.get("shippingCost")) || undefined,
       imageBase64: productImage || undefined,
       marketSaleEnabled: marketEnabled,
       marketPrice: marketEnabled ? parseDecimal(data.get("marketPrice")) : undefined,
@@ -711,10 +713,11 @@ export function SupplierCreateOfferPage() {
                 <div>
                   <label className="label-base">Preço normal de mercado</label>
                   <input
-                    required name="normalPrice" inputMode="decimal"
+                    required name="normalPrice" type="text" pattern="[0-9.,]+"
                     placeholder="R$ 0,00" className="input-base w-full"
                     onChange={e => setNormalPrice(parseDecimal(e.target.value))}
                   />
+                  <p className="text-xs text-gray-400 mt-1">Aceita: 1000,50 ou 1.000,50</p>
                 </div>
               </div>
             </div>
@@ -736,7 +739,7 @@ export function SupplierCreateOfferPage() {
                   <div className="grid sm:grid-cols-3 gap-4">
                     <div>
                       <label className="label-base">Preço Market Zup</label>
-                      <input name="marketPrice" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full"
+                      <input name="marketPrice" type="text" pattern="[0-9.,]+" placeholder="R$ 0,00" className="input-base w-full"
                         defaultValue={normalPrice > 0 ? String((normalPrice * 0.97).toFixed(2).replace(".", ",")) : ""} />
                     </div>
                     <div>
@@ -792,7 +795,7 @@ export function SupplierCreateOfferPage() {
                                 </td>
                                 <td className="px-3 py-2">
                                   <input
-                                    inputMode="decimal" value={tier.price || ""}
+                                    type="text" pattern="[0-9.,]+" value={tier.price || ""}
                                     onChange={e => updateTier(i, "price", parseDecimal(e.target.value))}
                                     className="input-base w-full text-sm" placeholder="R$ 0,00"
                                   />
@@ -834,10 +837,6 @@ export function SupplierCreateOfferPage() {
                     : <input required name="targetAmount" inputMode="decimal" placeholder="Ex: 50000" className="input-base w-full" />
                   }
                 </div>
-                <div>
-                  <label className="label-base">Compra mínima por comprador</label>
-                  <input required name="minimumPurchasePerBuyer" inputMode="decimal" placeholder="Ex: 4" className="input-base w-full" />
-                </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
@@ -855,9 +854,9 @@ export function SupplierCreateOfferPage() {
                   <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Região atendida</label>
                   <input required name="region" placeholder="Ex: Curitiba e região" className="input-base w-full" />
                 </div>
-                <div>
-                  <label className="label-base flex items-center gap-1.5"><CreditCard size={13} className="text-gray-400" />Condição de pagamento</label>
-                  <select required name="paymentTerms" className="input-base w-full">
+                <div className="sm:col-span-2">
+                  <label className="label-base flex items-center gap-1.5 mb-3"><CreditCard size={13} className="text-gray-400" />Condições de pagamento (selecione 1 ou mais)</label>
+                  <div className="space-y-2">
                     {[
                       "Pix direto com o fornecedor",
                       "Dinheiro na retirada",
@@ -867,10 +866,26 @@ export function SupplierCreateOfferPage() {
                       "Faturado para CNPJ aprovado",
                       "A combinar diretamente com o fornecedor",
                     ].map(p => (
-                      <option key={p} value={p}>{p}</option>
+                      <label key={p} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          value={p}
+                          name="paymentTerms"
+                          checked={selectedPaymentMethods.includes(p)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSelectedPaymentMethods([...selectedPaymentMethods, p]);
+                            } else {
+                              setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== p));
+                            }
+                          }}
+                          className="w-4 h-4 accent-orange-500"
+                        />
+                        <span className="text-sm text-gray-700">{p}</span>
+                      </label>
                     ))}
-                  </select>
-                  <p className="text-[11px] text-gray-400 leading-relaxed mt-1">A Zup atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-relaxed mt-2">A Zup atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
                 </div>
                 <div>
                   <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
@@ -886,6 +901,11 @@ export function SupplierCreateOfferPage() {
                   <label className="label-base flex items-center gap-1.5"><Calendar size={13} className="text-gray-400" />Prazo final da oferta</label>
                   <input required type="date" name="deadline" min={todayInputValue()} max={maxOfferDeadlineInputValue()} className="input-base w-full" />
                   <p className="text-xs text-gray-400 mt-1">Máximo de 3 dias para atingir a meta coletiva.</p>
+                </div>
+                <div>
+                  <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Valor do frete (opcional)</label>
+                  <input name="shippingCost" inputMode="decimal" placeholder="R$ 0,00" className="input-base w-full" />
+                  <p className="text-xs text-gray-400 mt-1">Deixe vazio se frete é por conta do comprador</p>
                 </div>
               </div>
             </div>
