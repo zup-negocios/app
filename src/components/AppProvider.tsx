@@ -55,9 +55,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState(store.getCategories());
   const [session, setSession] = useState(store.getSession());
 
-  // Sincronizar dados do localStorage a cada 500ms (para novos cadastros aparecerem imediatamente)
+  // Sincronizar dados do localStorage em tempo real (quando mudanças vêm de outras abas/janelas)
   useEffect(() => {
-    const interval = setInterval(() => {
+    const handleStorageChange = () => {
       const storedBuyers = store.getBuyers();
       const storedSuppliers = store.getSuppliers();
       const storedOffers = store.getOffers();
@@ -65,14 +65,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedMarketOrders = store.getMarketOrders();
       const storedRatings = store.getRatings();
 
-      if (storedBuyers.length !== buyers.length || JSON.stringify(storedBuyers) !== JSON.stringify(buyers)) setBuyers(storedBuyers);
-      if (storedSuppliers.length !== suppliers.length || JSON.stringify(storedSuppliers) !== JSON.stringify(suppliers)) setSuppliers(storedSuppliers);
-      if (storedOffers.length !== offers.length || JSON.stringify(storedOffers) !== JSON.stringify(offers)) setOffers(storedOffers);
-      if (storedReservations.length !== reservations.length) setReservations(storedReservations);
-      if (storedMarketOrders.length !== marketOrders.length) setMarketOrders(storedMarketOrders);
-      if (storedRatings.length !== ratings.length) setRatings(storedRatings);
-    }, 500);
-    return () => clearInterval(interval);
+      if (JSON.stringify(storedBuyers) !== JSON.stringify(buyers)) setBuyers(storedBuyers);
+      if (JSON.stringify(storedSuppliers) !== JSON.stringify(suppliers)) setSuppliers(storedSuppliers);
+      if (JSON.stringify(storedOffers) !== JSON.stringify(offers)) setOffers(storedOffers);
+      if (JSON.stringify(storedReservations) !== JSON.stringify(reservations)) setReservations(storedReservations);
+      if (JSON.stringify(storedMarketOrders) !== JSON.stringify(marketOrders)) setMarketOrders(storedMarketOrders);
+      if (JSON.stringify(storedRatings) !== JSON.stringify(ratings)) setRatings(storedRatings);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [buyers, suppliers, offers, reservations, marketOrders, ratings]);
 
   const syncOffers = (nextOffers: Offer[], sourceReservations = reservations) => {
