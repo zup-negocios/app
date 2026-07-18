@@ -687,14 +687,19 @@ export function SupplierCreateOfferPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid sm:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label-base">Unidade de venda</label>
                   <select required name="unit" className="input-base w-full">
-                    {["saco 25kg", "kg", "unidade", "caixa", "pacote", "fardo", "litro", "metro", "tonelada"].map(u => (
+                    {["kg", "g", "unidade", "caixa", "pacote", "fardo", "litro", "ml", "metro", "tonelada"].map(u => (
                       <option key={u} value={u}>{u}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="label-base">Quantidade por unidade</label>
+                  <input name="quantityPerUnit" type="number" inputMode="decimal" placeholder="Ex: 5 (para 5 kg)" className="input-base w-full" defaultValue="1" />
+                  <p className="text-xs text-gray-400 mt-1">Especifique a quantidade real (ex: 5 kg, não 1 saco)</p>
                 </div>
               </div>
             </div>
@@ -914,7 +919,7 @@ export function SupplierCreateOfferPage() {
             </p>
           </form>
 
-          <MarketIntelPanel normalPrice={normalPrice} />
+          {/* MarketIntelPanel desativado até oferta ser publicada */}
         </div>
       </div>
     </DashboardLayout>

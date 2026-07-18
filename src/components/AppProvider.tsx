@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
 import { bootstrapStorage, store } from "../utils/storage";
 import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
@@ -54,6 +54,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ratings, setRatings] = useState(store.getRatings());
   const [categories, setCategories] = useState(store.getCategories());
   const [session, setSession] = useState(store.getSession());
+
+  // Sincronizar dados do localStorage a cada 500ms (para novos cadastros aparecerem imediatamente)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const storedBuyers = store.getBuyers();
+      const storedSuppliers = store.getSuppliers();
+      const storedOffers = store.getOffers();
+      const storedReservations = store.getReservations();
+      const storedMarketOrders = store.getMarketOrders();
+      const storedRatings = store.getRatings();
+
+      if (storedBuyers.length !== buyers.length || JSON.stringify(storedBuyers) !== JSON.stringify(buyers)) setBuyers(storedBuyers);
+      if (storedSuppliers.length !== suppliers.length || JSON.stringify(storedSuppliers) !== JSON.stringify(suppliers)) setSuppliers(storedSuppliers);
+      if (storedOffers.length !== offers.length || JSON.stringify(storedOffers) !== JSON.stringify(offers)) setOffers(storedOffers);
+      if (storedReservations.length !== reservations.length) setReservations(storedReservations);
+      if (storedMarketOrders.length !== marketOrders.length) setMarketOrders(storedMarketOrders);
+      if (storedRatings.length !== ratings.length) setRatings(storedRatings);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [buyers, suppliers, offers, reservations, marketOrders, ratings]);
 
   const syncOffers = (nextOffers: Offer[], sourceReservations = reservations) => {
     const normalized = nextOffers.map(updateOfferStatus);
