@@ -4,6 +4,7 @@ import { bootstrapStorage, store } from "../utils/storage";
 import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
 import { sendCollectiveOrderMessage, sendMetaAchievedMessage, sendImmediateOrderMessage } from "../utils/whatsappService";
 import { onBuyerSignup, onSupplierSignup, onClientImmediatePurchase, onClientCollectiveReservation } from "../utils/autoMessages";
+import { supabase, isSupabaseEnabled } from "../lib/supabase";
 
 interface AppState {
   buyers: BuyerProfile[];
@@ -76,6 +77,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [buyers, suppliers, offers, reservations, marketOrders, ratings]);
+
+  // Sincronizar com Supabase (opcional - se configurado)
+  useEffect(() => {
+    if (!isSupabaseEnabled() || !supabase) return;
+
+    const syncToSupabase = async () => {
+      try {
+        // Sincronizar buyers
+        if (buyers.length > 0) {
+          await supabase.from("buyers").upsert(buyers, { onConflict: "id" }).catch(err => console.log("Buyers sync skipped:", err.message));
+        }
+        // Sincronizar suppliers
+        if (suppliers.length > 0) {
+          await supabase.from("suppliers").upsert(suppliers, { onConflict: "id" }).catch(err => console.log("Suppliers sync skipped:", err.message));
+        }
+        // Sincronizar offers
+        if (offers.length > 0) {
+          await supabase.from("offers").upsert(offers, { onConflict: "id" }).catch(err => console.log("Offers sync skipped:", err.message));
+        }
+      } catch (error) {
+        console.log("Supabase sync error (non-critical):", error);
+      }
+    };
+
+    // Sincronizar a cada 30 segundos (ou quando dados mudam)
+    const timer = setInterval(syncToSupabase, 30000);
+    syncToSupabase(); // Sincronizar imediatamente também
+
+    return () => clearInterval(timer);
+  }, [buyers, suppliers, offers]);
 
   const syncOffers = (nextOffers: Offer[], sourceReservations = reservations) => {
     const normalized = nextOffers.map(updateOfferStatus);
