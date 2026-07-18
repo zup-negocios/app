@@ -252,7 +252,7 @@ export function AuthPage() {
               <input required type="email" name="email" placeholder="E-mail" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
               <input required type="password" name="password" minLength={6} placeholder="Senha (mín. 6 caracteres)" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
               <input required name="city" placeholder="Cidade base" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
-              <input required name="categories" placeholder="Categorias (ex: Alimentos, Bebidas)" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+              <input required name="categories" placeholder="Ramo de negócio (ex: Alimentos, Bebidas)" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
               <select required name="supplierType" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300 bg-white">
                 <option value="">Tipo de fornecedor</option>
                 <option value="fabricante">Fabricante</option>
@@ -262,11 +262,7 @@ export function AuthPage() {
               </select>
               <select required name="planoFornecedor" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300 bg-white">
                 <option value="gratuito">Plano gratuito</option>
-<<<<<<< HEAD
-                <option value="assinante">Assinante Zuppi</option>
-=======
                 <option value="assinante">Assinante Zup</option>
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
               </select>
             </div>
             {registerError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3">{registerError}</p>}

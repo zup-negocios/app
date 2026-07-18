@@ -122,19 +122,19 @@ export function ViabilitySimulatorPage() {
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
   const [form, setForm] = useState({
-    product: "Farinha de Trigo Especial 25kg",
-    brand: "Tradição",
-    category: "Alimentos > Farinhas",
-    unit: "saco 25kg",
-    targetQty: "400",
-    minPurchase: "4",
-    cost: "94,00",
-    freight: "4,50",
-    zuppiTax: "2,40",
-    otherCosts: "0,00",
+    product: "",
+    brand: "",
+    category: "",
+    unit: "",
+    targetQty: "",
+    minPurchase: "",
+    cost: "",
+    freight: "",
+    zuppiTax: "2.5",
+    otherCosts: "",
     margin: "0.12",
-    lowestMarketPrice: "112,00",
-    marketSource: "Mercado Livre",
+    lowestMarketPrice: "",
+    marketSource: "",
   });
 
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));

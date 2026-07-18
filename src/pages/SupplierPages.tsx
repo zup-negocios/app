@@ -619,6 +619,20 @@ export function SupplierCreateOfferPage() {
     const targetAmount = targetType === "amount" ? parseDecimal(data.get("targetAmount")) : undefined;
     const validTiers = tiers.filter(t => t.percentage > 0 && t.price > 0);
     const collectiveMinQty = parseDecimal(data.get("collectiveMinQty"));
+
+    // Proteger publicação com confirmação
+    const confirmed = window.confirm(
+      `CONFIRMAR PUBLICAÇÃO?\n\n` +
+      `Produto: ${String(data.get("product"))}\n` +
+      `Categoria: ${category?.name || "Outros"}\n` +
+      `Preço Zup: R$ ${parseDecimal(data.get("normalPrice"))}\n` +
+      `Meta: ${targetType === "quantity" ? `${targetQuantity} unidades` : `R$ ${targetAmount}`}\n` +
+      `Prazo: ${deadline}\n\n` +
+      `Depois de publicar, você não poderá voltar desta página.`
+    );
+
+    if (!confirmed) return;
+
     addOffer({
       supplierId: session.id,
       product: String(data.get("product")),
@@ -651,7 +665,7 @@ export function SupplierCreateOfferPage() {
       collectiveMinimumQuantity: collectiveEnabled ? collectiveMinQty : undefined,
       progressiveTiers: collectiveEnabled && validTiers.length > 0 ? validTiers : undefined,
     });
-    toast.success("Oferta cadastrada com sucesso.");
+    toast.success("Oferta publicada com sucesso!");
     navigate("/fornecedor");
   };
 
