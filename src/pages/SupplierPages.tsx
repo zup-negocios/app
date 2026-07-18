@@ -537,6 +537,10 @@ function ProductImageUpload({ value, onChange }: { value: string | null; onChang
       setError("Formato não suportado. Use PNG, JPG, JPEG ou WEBP.");
       return;
     }
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      setError("Arquivo muito grande. Máximo 5MB. Comprima a imagem.");
+      return;
+    }
     setError("");
     const reader = new FileReader();
     reader.onload = () => onChange(String(reader.result));
@@ -549,6 +553,9 @@ function ProductImageUpload({ value, onChange }: { value: string | null; onChang
         <h3 className="font-bold text-gray-800">Foto do produto</h3>
         <p className="text-sm text-gray-500 mt-1">
           Adicione uma imagem do produto para aumentar o interesse dos compradores. Ofertas com foto tendem a gerar mais cliques e reservas.
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          Formatos: PNG, JPG, JPEG ou WEBP — máximo 5MB. Comprima a imagem se necessário.
         </p>
       </div>
 
