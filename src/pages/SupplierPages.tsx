@@ -431,7 +431,7 @@ export function SupplierDashboardPage() {
 
 // ─── MARKET INTEL PANEL ───────────────────────────────────────────────────────
 
-function MarketIntelPanel({ normalPrice }: { normalPrice: number }) {
+export function MarketIntelPanel({ normalPrice }: { normalPrice: number }) {
   const marketMin = 112.00;
   const marketAvg = 118.40;
   const marketMax = 124.90;
@@ -662,7 +662,6 @@ export function SupplierCreateOfferPage() {
       paymentTerms: selectedPaymentMethods.join("; "),
       deliveryTime: String(data.get("deliveryTime")),
       notes: String(data.get("notes")),
-      shippingCost: parseDecimal(data.get("shippingCost")) || undefined,
       imageBase64: productImage || undefined,
       marketSaleEnabled: marketEnabled,
       marketPrice: marketEnabled ? parseDecimal(data.get("marketPrice")) : undefined,

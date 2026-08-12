@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit2, MessageSquare, Save, X, CheckCircle } from "lucide-react";
+import { Edit2, Save, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 const DEFAULT_TEMPLATES = {

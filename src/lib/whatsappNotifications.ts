@@ -1,5 +1,5 @@
 // Notificações WhatsApp - Disparos automáticos de eventos
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 
 const TWILIO_ACCOUNT_SID = import.meta.env.VITE_TWILIO_ACCOUNT_SID;
 const TWILIO_PHONE = import.meta.env.VITE_TWILIO_PHONE_NUMBER;

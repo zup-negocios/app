@@ -86,15 +86,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         // Sincronizar buyers
         if (buyers.length > 0) {
-          await supabase.from("buyers").upsert(buyers, { onConflict: "id" }).catch(err => console.log("Buyers sync skipped:", err.message));
+          await supabase!.from("buyers").upsert(buyers, { onConflict: "id" }).then(r => { if (r.error) console.log("Buyers sync skipped:", r.error.message); });
         }
         // Sincronizar suppliers
         if (suppliers.length > 0) {
-          await supabase.from("suppliers").upsert(suppliers, { onConflict: "id" }).catch(err => console.log("Suppliers sync skipped:", err.message));
+          await supabase!.from("suppliers").upsert(suppliers, { onConflict: "id" }).then(r => { if (r.error) console.log("Suppliers sync skipped:", r.error.message); });
         }
         // Sincronizar offers
         if (offers.length > 0) {
-          await supabase.from("offers").upsert(offers, { onConflict: "id" }).catch(err => console.log("Offers sync skipped:", err.message));
+          await supabase!.from("offers").upsert(offers, { onConflict: "id" }).then(r => { if (r.error) console.log("Offers sync skipped:", r.error.message); });
         }
       } catch (error) {
         console.log("Supabase sync error (non-critical):", error);
