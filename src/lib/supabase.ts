@@ -6,11 +6,16 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Supabase é opcional - funciona com localStorage se não configurado
 export let supabase: SupabaseClient | null = null;
 
-if (supabaseUrl && supabaseAnonKey) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-  console.log("✅ Supabase conectado!");
-} else {
-  console.warn("⚠️ Supabase não configurado. Usando localStorage.");
+try {
+  if (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith("http")) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    console.log("✅ Supabase conectado!");
+  } else {
+    console.warn("⚠️ Supabase não configurado. Usando localStorage.");
+  }
+} catch (e) {
+  console.warn("⚠️ Supabase falhou ao inicializar. Usando localStorage.", e);
+  supabase = null;
 }
 
 export const isSupabaseEnabled = () => supabase !== null;
