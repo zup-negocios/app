@@ -1,12 +1,11 @@
 // Configuração Evolution API para WhatsApp
-<<<<<<< HEAD
 // URL do servidor Evolution rodando localmente via Docker
 const EVOLUTION_BASE_URL = "http://localhost:8080";
 const EVOLUTION_API_KEY = "zup_evolution_key_123";
-=======
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 
-interface EvolutionConfig {
+export interface EvolutionConfig {
+  baseUrl: string;
+  apiKey: string;
   instanceName: string;
   token: string;
   qrCode: string | null;
@@ -15,6 +14,8 @@ interface EvolutionConfig {
 }
 
 const DEFAULT_CONFIG: EvolutionConfig = {
+  baseUrl: EVOLUTION_BASE_URL,
+  apiKey: EVOLUTION_API_KEY,
   instanceName: "zup",
   token: "",
   qrCode: null,
@@ -22,12 +23,6 @@ const DEFAULT_CONFIG: EvolutionConfig = {
   connectedPhone: null,
 };
 
-<<<<<<< HEAD
-=======
-/**
- * Salvar configuração Evolution
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 export function saveEvolutionConfig(config: Partial<EvolutionConfig>) {
   try {
     const current = getEvolutionConfig();
@@ -40,12 +35,6 @@ export function saveEvolutionConfig(config: Partial<EvolutionConfig>) {
   }
 }
 
-<<<<<<< HEAD
-=======
-/**
- * Obter configuração Evolution
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 export function getEvolutionConfig(): EvolutionConfig {
   try {
     const stored = localStorage.getItem("zup_evolution_config");
@@ -58,12 +47,6 @@ export function getEvolutionConfig(): EvolutionConfig {
   return DEFAULT_CONFIG;
 }
 
-<<<<<<< HEAD
-=======
-/**
- * Criar nova instância Evolution e obter QR code
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 export async function createEvolutionInstance(): Promise<{
   qrCode: string | null;
   instanceName: string;
@@ -72,11 +55,6 @@ export async function createEvolutionInstance(): Promise<{
 }> {
   try {
     const instanceName = `zup-${Date.now()}`;
-
-<<<<<<< HEAD
-=======
-    // Chamada à Evolution API para criar instância
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     const response = await fetch("/api/evolution/create-instance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,10 +64,9 @@ export async function createEvolutionInstance(): Promise<{
     const data = await response.json();
 
     if (response.ok && data.qrCode) {
-      console.log("✅ Instância Evolution criada");
       return {
         qrCode: data.qrCode,
-        instanceName: instanceName,
+        instanceName,
         success: true,
         message: "QR Code gerado. Escaneie com seu WhatsApp!",
       };
@@ -112,21 +89,8 @@ export async function createEvolutionInstance(): Promise<{
   }
 }
 
-<<<<<<< HEAD
-=======
-/**
- * Conectar usando token Evolution
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
-export async function connectEvolution(
-  instanceName: string,
-  token: string
-): Promise<boolean> {
+export async function connectEvolution(instanceName: string, token: string): Promise<boolean> {
   try {
-<<<<<<< HEAD
-=======
-    // Validar conexão
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
     const response = await fetch("/api/evolution/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,12 +98,7 @@ export async function connectEvolution(
     });
 
     if (response.ok) {
-      saveEvolutionConfig({
-        instanceName,
-        token,
-        isConnected: true,
-      });
-      console.log("✅ Evolution conectado");
+      saveEvolutionConfig({ instanceName, token, isConnected: true });
       return true;
     }
     return false;
@@ -149,12 +108,6 @@ export async function connectEvolution(
   }
 }
 
-<<<<<<< HEAD
-=======
-/**
- * Desconectar Evolution
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 export function disconnectEvolution() {
   saveEvolutionConfig({
     instanceName: "zup",
@@ -163,23 +116,13 @@ export function disconnectEvolution() {
     isConnected: false,
     connectedPhone: null,
   });
-  console.log("❌ Evolution desconectado");
 }
 
-<<<<<<< HEAD
-=======
-/**
- * Enviar mensagem via Evolution API
- */
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
-export async function sendViaEvolution(
-  phone: string,
-  message: string
-): Promise<boolean> {
+export async function sendViaEvolution(phone: string, message: string): Promise<boolean> {
   const config = getEvolutionConfig();
 
   if (!config.isConnected || !config.token) {
-    console.warn("⚠️ Evolution não conectado");
+    console.warn("Evolution não conectado");
     return false;
   }
 
@@ -191,19 +134,13 @@ export async function sendViaEvolution(
         instanceName: config.instanceName,
         token: config.token,
         phone: phone.replace(/\D/g, ""),
-        message: message,
+        message,
       }),
     });
 
-    if (response.ok) {
-      console.log(`✅ Mensagem enviada via Evolution para ${phone}`);
-      return true;
-    } else {
-      console.warn(`⚠️ Erro ao enviar via Evolution`);
-      return false;
-    }
+    return response.ok;
   } catch (error) {
-    console.error("❌ Erro ao enviar mensagem:", error);
+    console.error("Erro ao enviar mensagem:", error);
     return false;
   }
 }

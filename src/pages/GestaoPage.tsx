@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -9,15 +9,11 @@ import { currency, lastMonthOptions, monthKey, monthLabel } from "../utils/busin
 import {
   Users, Building2, Tag, ShoppingCart, Target, TrendingUp, Clock,
   AlertTriangle, CheckCircle, ChevronRight, LogOut, LayoutDashboard,
-<<<<<<< HEAD
   FileText, DollarSign, Settings, Crown, MessageSquare
-=======
-  FileText, DollarSign, Settings, Crown, MessageCircle
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
 } from "lucide-react";
 import { WhatsAppSetupPage } from "./WhatsAppSetupPage";
 
-// ─── COUNTER ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ COUNTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function useCountUp(target: number, active = false) {
   const [val, setVal] = useState(0);
@@ -54,7 +50,7 @@ function AnimatedKpi({ value, label, isCurrency = false }: { value: number; labe
   );
 }
 
-// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type GestaoSection = "dashboard" | "compradores" | "fornecedores" | "ofertas" | "negociacoes" | "financeiro" | "relatorios" | "whatsapp" | "configuracoes";
 
@@ -63,15 +59,11 @@ const NAV: { icon: React.ElementType; label: string; section: GestaoSection }[] 
   { icon: Users, label: "Compradores", section: "compradores" },
   { icon: Building2, label: "Fornecedores", section: "fornecedores" },
   { icon: Tag, label: "Ofertas", section: "ofertas" },
-  { icon: ShoppingCart, label: "Negociações", section: "negociacoes" },
+  { icon: ShoppingCart, label: "NegociaÃ§Ãµes", section: "negociacoes" },
   { icon: DollarSign, label: "Financeiro", section: "financeiro" },
-  { icon: FileText, label: "Relatórios", section: "relatorios" },
-<<<<<<< HEAD
+  { icon: FileText, label: "RelatÃ³rios", section: "relatorios" },
   { icon: MessageSquare, label: "WhatsApp", section: "whatsapp" },
-=======
-  { icon: MessageCircle, label: "WhatsApp", section: "whatsapp" },
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
-  { icon: Settings, label: "Configurações", section: "configuracoes" },
+  { icon: Settings, label: "ConfiguraÃ§Ãµes", section: "configuracoes" },
 ];
 
 function GestaoSidebar({ section, setSection }: { section: GestaoSection; setSection: (s: GestaoSection) => void }) {
@@ -84,7 +76,7 @@ function GestaoSidebar({ section, setSection }: { section: GestaoSection; setSec
           <img src="/assets/zup-icon.png" alt="Zup" className="h-8 w-8 rounded-lg" />
           <span className="text-xl font-black text-white tracking-tight">Zup</span>
         </div>
-        <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full tracking-wide">GESTÃO INTERNA</span>
+        <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full tracking-wide">GESTÃƒO INTERNA</span>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV.map(({ icon: Icon, label, section: s }) => {
@@ -119,7 +111,7 @@ function GestaoSidebar({ section, setSection }: { section: GestaoSection; setSec
   );
 }
 
-// ─── CHARTS DATA ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ CHARTS DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const weeklyData = [
   { week: "Sem 1", valor: 87420 }, { week: "Sem 2", valor: 124300 },
@@ -135,7 +127,7 @@ const monthlyOffers = [
 
 const PIE_COLORS = ["#F97316", "#FB923C", "#FDBA74", "#FED7AA", "#FFF7ED", "#EA580C"];
 
-// ─── KPI CARD ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ KPI CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function KpiCard({ title, value, sub, icon: Icon, color = "orange", alert = false, onClick }: {
   title: string; value: string | number; sub?: string;
@@ -166,7 +158,7 @@ function KpiCard({ title, value, sub, icon: Icon, color = "orange", alert = fals
   );
 }
 
-// ─── LIVE COUNTER ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ LIVE COUNTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function LiveCounter({ count }: { count: number }) {
   const [display, setDisplay] = useState(count);
@@ -184,13 +176,13 @@ function LiveCounter({ count }: { count: number }) {
           <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> AO VIVO
         </span>
         <p className="text-5xl font-black text-orange-600">{display.toLocaleString("pt-BR")}</p>
-        <p className="text-gray-500 text-sm mt-1">Negociações fechadas hoje</p>
+        <p className="text-gray-500 text-sm mt-1">NegociaÃ§Ãµes fechadas hoje</p>
       </div>
     </div>
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function GestaoPage() {
   const { buyers, suppliers, offers, reservations, marketOrders, updateSupplierApproval, updateSupplierPlan } = useAppState();
@@ -219,12 +211,8 @@ export function GestaoPage() {
 
   const sectionLabel: Record<GestaoSection, string> = {
     dashboard: "Dashboard", compradores: "Compradores", fornecedores: "Fornecedores",
-    ofertas: "Ofertas", negociacoes: "Negociações", financeiro: "Financeiro",
-<<<<<<< HEAD
-    relatorios: "Relatórios", whatsapp: "WhatsApp", configuracoes: "Configurações",
-=======
-    relatorios: "Relatórios", whatsapp: "Configuração WhatsApp", configuracoes: "Configurações",
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
+    ofertas: "Ofertas", negociacoes: "NegociaÃ§Ãµes", financeiro: "Financeiro",
+    relatorios: "RelatÃ³rios", whatsapp: "WhatsApp", configuracoes: "ConfiguraÃ§Ãµes",
   };
 
   return (
@@ -241,7 +229,7 @@ export function GestaoPage() {
         </header>
 
         <main className="p-6 space-y-6 max-w-[1400px] w-full">
-          {/* ── SECTIONS OTHER THAN DASHBOARD ── */}
+          {/* â”€â”€ SECTIONS OTHER THAN DASHBOARD â”€â”€ */}
           {section === "compradores" && (
             <div className="card">
               <div className="px-5 py-4 border-b border-gray-100">
@@ -274,12 +262,12 @@ export function GestaoPage() {
             <div className="card">
               <div className="px-5 py-4 border-b border-gray-100">
                 <h3 className="font-bold text-gray-800">Fornecedores</h3>
-                <p className="text-xs text-gray-400 mt-0.5">{suppliers.length} cadastrados · {suppliers.filter(s=>!s.approved).length} pendentes</p>
+                <p className="text-xs text-gray-400 mt-0.5">{suppliers.length} cadastrados Â· {suppliers.filter(s=>!s.approved).length} pendentes</p>
               </div>
               <div className="overflow-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
-                    <tr>{["Empresa","Cidade","Tipo","Plano","Status","Ações"].map(h=><th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+                    <tr>{["Empresa","Cidade","Tipo","Plano","Status","AÃ§Ãµes"].map(h=><th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {suppliers.map(s=>(
@@ -317,7 +305,7 @@ export function GestaoPage() {
               <div className="overflow-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
-                    <tr>{["Produto","Fornecedor","Categoria","Preço","Meta","Status"].map(h=><th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+                    <tr>{["Produto","Fornecedor","Categoria","PreÃ§o","Meta","Status"].map(h=><th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {offers.map(o=>{
@@ -325,7 +313,7 @@ export function GestaoPage() {
                       return (
                         <tr key={o.id} className="hover:bg-gray-50/50">
                           <td className="px-4 py-3 font-medium">{o.product}</td>
-                          <td className="px-4 py-3 text-gray-500">{sup?.companyName||"—"}</td>
+                          <td className="px-4 py-3 text-gray-500">{sup?.companyName||"â€”"}</td>
                           <td className="px-4 py-3 text-gray-500 capitalize">{o.category}</td>
                           <td className="px-4 py-3 font-semibold text-orange-600">{currency(o.zuppiPrice)}/{o.unit}</td>
                           <td className="px-4 py-3 text-gray-500">{o.minGoal} {o.unit}</td>
@@ -346,8 +334,8 @@ export function GestaoPage() {
           {section === "negociacoes" && (
             <div className="card">
               <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-800">Negociações / Pedidos</h3>
-                <p className="text-xs text-gray-400 mt-0.5">{reservations.length} no total · {currency(reservations.reduce((a,r)=>a+r.totalAmount,0))} em negociação</p>
+                <h3 className="font-bold text-gray-800">NegociaÃ§Ãµes / Pedidos</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{reservations.length} no total Â· {currency(reservations.reduce((a,r)=>a+r.totalAmount,0))} em negociaÃ§Ã£o</p>
               </div>
               <div className="overflow-auto">
                 <table className="w-full text-sm">
@@ -361,7 +349,7 @@ export function GestaoPage() {
                         <tr key={r.id} className="hover:bg-gray-50/50">
                           <td className="px-4 py-3 font-medium">{r.product}</td>
                           <td className="px-4 py-3 text-gray-600">{r.buyerSnapshot.companyName}</td>
-                          <td className="px-4 py-3 text-gray-500">{sup?.companyName||"—"}</td>
+                          <td className="px-4 py-3 text-gray-500">{sup?.companyName||"â€”"}</td>
                           <td className="px-4 py-3">{r.quantity} {r.unit}</td>
                           <td className="px-4 py-3 font-semibold text-orange-600">{currency(r.totalAmount)}</td>
                           <td className="px-4 py-3"><span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{r.status.replace(/_/g," ")}</span></td>
@@ -378,16 +366,16 @@ export function GestaoPage() {
             <div className="space-y-4">
               {[
                 { label: "Volume total reservado", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)), color: "text-orange-600" },
-                { label: "Projeção de conversão (80%)", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)*0.8), color: "text-gray-800" },
+                { label: "ProjeÃ§Ã£o de conversÃ£o (80%)", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)*0.8), color: "text-gray-800" },
                 { label: "Receita estimada Zup (2,5%)", value: currency(reservations.reduce((a,r)=>a+r.totalAmount,0)*0.8*0.025), color: "text-green-600" },
-                { label: "Ticket médio por pedido", value: reservations.length ? currency(reservations.reduce((a,r)=>a+r.totalAmount,0)/reservations.length) : "—", color: "text-gray-800" },
+                { label: "Ticket mÃ©dio por pedido", value: reservations.length ? currency(reservations.reduce((a,r)=>a+r.totalAmount,0)/reservations.length) : "â€”", color: "text-gray-800" },
               ].map(({label,value,color})=>(
                 <div key={label} className="card p-5 flex items-center justify-between">
                   <p className="text-sm text-gray-600">{label}</p>
                   <p className={`text-2xl font-black ${color}`}>{value}</p>
                 </div>
               ))}
-              <p className="text-xs text-gray-400 text-center">⚠ Valores baseados em dados simulados</p>
+              <p className="text-xs text-gray-400 text-center">âš  Valores baseados em dados simulados</p>
             </div>
           )}
 
@@ -439,8 +427,8 @@ export function GestaoPage() {
               <div className="space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-gray-800">Relatório mensal da plataforma</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Resultado consolidado de compradores e fornecedores por mês (Coletiva + Imediata).</p>
+                    <h3 className="font-bold text-gray-800">RelatÃ³rio mensal da plataforma</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">Resultado consolidado de compradores e fornecedores por mÃªs (Coletiva + Imediata).</p>
                   </div>
                   <select value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 text-sm">
                     {lastMonthOptions().map(m => (
@@ -458,12 +446,12 @@ export function GestaoPage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="card p-4">
-                    <p className="text-xs text-gray-500 font-medium">📦 Vendas Coletivas</p>
+                    <p className="text-xs text-gray-500 font-medium">ðŸ“¦ Vendas Coletivas</p>
                     <p className="text-2xl font-bold text-orange-600 mt-1">{currency(monthTotalColetiva)}</p>
                     <p className="text-xs text-gray-400 mt-1">{monthReservations.length} pedidos</p>
                   </div>
                   <div className="card p-4">
-                    <p className="text-xs text-gray-500 font-medium">⚡ Market Zup (Imediatas)</p>
+                    <p className="text-xs text-gray-500 font-medium">âš¡ Market Zup (Imediatas)</p>
                     <p className="text-2xl font-bold text-blue-600 mt-1">{currency(monthTotalImediata)}</p>
                     <p className="text-xs text-gray-400 mt-1">{monthMarketOrders.length} pedidos</p>
                   </div>
@@ -482,7 +470,7 @@ export function GestaoPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {allPedidos.length === 0 ? (
-                          <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Nenhum pedido neste mês.</td></tr>
+                          <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Nenhum pedido neste mÃªs.</td></tr>
                         ) : allPedidos.map(p => {
                           const sup = suppliers.find(s => s.id === p.supplierId);
                           return (
@@ -494,7 +482,7 @@ export function GestaoPage() {
                               </td>
                               <td className="px-4 py-3 font-medium">{p.product}</td>
                               <td className="px-4 py-3 text-gray-600">{p.buyerName}</td>
-                              <td className="px-4 py-3 text-gray-500">{sup?.companyName || "—"}</td>
+                              <td className="px-4 py-3 text-gray-500">{sup?.companyName || "â€”"}</td>
                               <td className="px-4 py-3">{p.quantity} {p.unit}</td>
                               <td className="px-4 py-3 font-semibold text-orange-600">{currency(p.totalAmount)}</td>
                               <td className="px-4 py-3 text-gray-500 text-xs">{new Date(p.createdAt).toLocaleDateString("pt-BR")}</td>
@@ -508,22 +496,14 @@ export function GestaoPage() {
                 </div>
 
                 <div className="text-center">
-                  <button className="btn-primary mx-auto" onClick={() => window.print()}>Exportar relatório (PDF)</button>
+                  <button className="btn-primary mx-auto" onClick={() => window.print()}>Exportar relatÃ³rio (PDF)</button>
                 </div>
               </div>
             );
           })()}
 
           {section === "whatsapp" && (
-<<<<<<< HEAD
             <WhatsAppSetupPage />
-=======
-            <iframe
-              src="/admin/whatsapp-setup"
-              style={{ width: "100%", height: "800px", border: "none", borderRadius: "16px" }}
-              title="WhatsApp Setup"
-            />
->>>>>>> 340ce69334e4d253477a33892d15a13154b08771
           )}
 
           {section === "configuracoes" && (
@@ -531,12 +511,12 @@ export function GestaoPage() {
               <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
                 <Settings size={24} className="text-orange-400" />
               </div>
-              <h3 className="font-bold text-gray-700 text-lg">Configurações</h3>
-              <p className="text-sm text-gray-400 mt-2">Em desenvolvimento — disponível em breve.</p>
+              <h3 className="font-bold text-gray-700 text-lg">ConfiguraÃ§Ãµes</h3>
+              <p className="text-sm text-gray-400 mt-2">Em desenvolvimento â€” disponÃ­vel em breve.</p>
             </div>
           )}
 
-          {/* ── DASHBOARD ── */}
+          {/* â”€â”€ DASHBOARD â”€â”€ */}
           {section === "dashboard" && <>
           {/* Hero metric */}
           <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 p-8 text-white">
@@ -544,20 +524,20 @@ export function GestaoPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <AnimatedKpi value={totalReserved} label="volume reservado" isCurrency />
               <AnimatedKpi value={reservations.length} label="pedidos coletivos" />
-              <AnimatedKpi value={buyers.length + suppliers.length} label="usuários cadastrados" />
+              <AnimatedKpi value={buyers.length + suppliers.length} label="usuÃ¡rios cadastrados" />
               <AnimatedKpi value={reachedOffers.length} label="metas atingidas" />
             </div>
           </div>
 
           {/* KPIs row 1 */}
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <KpiCard title="Compradores cadastrados" value={buyers.length} sub="+12 esse mês" icon={Users} color="blue" />
-            <KpiCard title="Fornecedores aprovados" value={suppliers.filter(s => s.approved).length} sub="+3 esse mês" icon={Building2} color="green" />
-            <KpiCard title="Aguardando aprovação" value={pendingSuppliers.length} icon={Clock} color="yellow" alert={pendingSuppliers.length > 0} />
+            <KpiCard title="Compradores cadastrados" value={buyers.length} sub="+12 esse mÃªs" icon={Users} color="blue" />
+            <KpiCard title="Fornecedores aprovados" value={suppliers.filter(s => s.approved).length} sub="+3 esse mÃªs" icon={Building2} color="green" />
+            <KpiCard title="Aguardando aprovaÃ§Ã£o" value={pendingSuppliers.length} icon={Clock} color="yellow" alert={pendingSuppliers.length > 0} />
             <KpiCard title="Ofertas ativas" value={activeOffers.length} icon={Tag} color="orange" />
           </div>
 
-          {/* Monthly KPIs — Market + Coletiva */}
+          {/* Monthly KPIs â€” Market + Coletiva */}
           {(() => {
             const dashCollective = reservations.filter(r => monthKey(r.createdAt) === dashMonth && r.purchaseMode !== "market");
             const dashMarket = marketOrders.filter(o => monthKey(o.createdAt) === dashMonth);
@@ -566,16 +546,16 @@ export function GestaoPage() {
             return (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-600">Resultados do mês</h3>
+                  <h3 className="text-sm font-bold text-gray-600">Resultados do mÃªs</h3>
                   <select value={dashMonth} onChange={e => setDashMonth(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs">
                     {lastMonthOptions().map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
                   </select>
                 </div>
                 <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <KpiCard title="⚡ Market Zup" value={String(dashMarket.length)} sub={currency(dashMarket.reduce((a,o)=>a+o.totalAmount,0))} icon={ShoppingCart} color="orange" />
-                  <KpiCard title="👥 Compra coletiva" value={String(dashCollective.length)} sub={currency(dashCollective.reduce((a,r)=>a+r.totalAmount,0))} icon={Users} color="purple" />
-                  <KpiCard title="Vendas concluídas" value={String(dashConcluded.length)} sub={currency(dashConcluded.reduce((a,r)=>a+r.totalAmount,0))} icon={CheckCircle} color="green" />
-                  <KpiCard title="Não cumpriram" value={String(dashNotFulfilled.length)} icon={AlertTriangle} color="yellow" alert={dashNotFulfilled.length > 0} />
+                  <KpiCard title="âš¡ Market Zup" value={String(dashMarket.length)} sub={currency(dashMarket.reduce((a,o)=>a+o.totalAmount,0))} icon={ShoppingCart} color="orange" />
+                  <KpiCard title="ðŸ‘¥ Compra coletiva" value={String(dashCollective.length)} sub={currency(dashCollective.reduce((a,r)=>a+r.totalAmount,0))} icon={Users} color="purple" />
+                  <KpiCard title="Vendas concluÃ­das" value={String(dashConcluded.length)} sub={currency(dashConcluded.reduce((a,r)=>a+r.totalAmount,0))} icon={CheckCircle} color="green" />
+                  <KpiCard title="NÃ£o cumpriram" value={String(dashNotFulfilled.length)} icon={AlertTriangle} color="yellow" alert={dashNotFulfilled.length > 0} />
                 </div>
               </div>
             );
@@ -586,7 +566,7 @@ export function GestaoPage() {
             <KpiCard title="Pedidos gerados" value={reservations.length} icon={ShoppingCart} color="purple" />
             <KpiCard title="Aguardando meta" value={reservations.filter(r => r.status === "aguardando_meta").length} icon={Clock} color="amber" />
             <KpiCard title="Metas atingidas" value={reachedOffers.length} icon={Target} color="green" />
-            <KpiCard title="Ticket médio" value={currency(avgTicket)} icon={TrendingUp} color="teal" />
+            <KpiCard title="Ticket mÃ©dio" value={currency(avgTicket)} icon={TrendingUp} color="teal" />
             <LiveCounter count={reachedOffers.length * 3 + reservations.length} />
           </div>
 
@@ -594,7 +574,7 @@ export function GestaoPage() {
           <div className="grid lg:grid-cols-3 gap-4">
             {/* Volume chart */}
             <div className="lg:col-span-2 card p-5">
-              <h3 className="font-bold text-gray-800 mb-4">Volume negociado (últimas 8 semanas)</h3>
+              <h3 className="font-bold text-gray-800 mb-4">Volume negociado (Ãºltimas 8 semanas)</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={weeklyData}>
                   <defs>
@@ -614,7 +594,7 @@ export function GestaoPage() {
 
             {/* Pie chart */}
             <div className="card p-5">
-              <h3 className="font-bold text-gray-800 mb-4">Distribuição por categoria</h3>
+              <h3 className="font-bold text-gray-800 mb-4">DistribuiÃ§Ã£o por categoria</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
@@ -630,7 +610,7 @@ export function GestaoPage() {
           <div className="grid lg:grid-cols-2 gap-4">
             {/* Bar chart */}
             <div className="card p-5">
-              <h3 className="font-bold text-gray-800 mb-4">Novas ofertas por mês</h3>
+              <h3 className="font-bold text-gray-800 mb-4">Novas ofertas por mÃªs</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={monthlyOffers}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -644,14 +624,14 @@ export function GestaoPage() {
 
             {/* Projection */}
             <div className="card p-5 space-y-4">
-              <h3 className="font-bold text-gray-800">Projeção financeira</h3>
+              <h3 className="font-bold text-gray-800">ProjeÃ§Ã£o financeira</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Em negociação</span>
+                  <span className="text-sm text-gray-600">Em negociaÃ§Ã£o</span>
                   <span className="font-bold text-gray-800">{currency(totalReserved)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Projeção de conversão (80%)</span>
+                  <span className="text-sm text-gray-600">ProjeÃ§Ã£o de conversÃ£o (80%)</span>
                   <span className="font-bold text-gray-800">{currency(projectedRevenue)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 bg-orange-50 rounded-xl px-3">
@@ -672,7 +652,7 @@ export function GestaoPage() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">{currency(zuppiCommission)} de {currency(monthlyGoal)} da meta mensal</p>
               </div>
-              <p className="text-[10px] text-gray-400">⚠ Projeção baseada em dados simulados</p>
+              <p className="text-[10px] text-gray-400">âš  ProjeÃ§Ã£o baseada em dados simulados</p>
             </div>
           </div>
 
@@ -681,12 +661,12 @@ export function GestaoPage() {
             <div className="card p-5 border-l-4 border-yellow-400 bg-yellow-50/50">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <AlertTriangle size={18} className="text-yellow-500" />
-                Ações pendentes
+                AÃ§Ãµes pendentes
               </h3>
               <div className="space-y-2">
                 {pendingSuppliers.map(s => (
                   <div key={s.id} className="flex items-center justify-between py-2 border-b border-yellow-100 last:border-0">
-                    <p className="text-sm text-gray-700">Fornecedor <b>"{s.companyName}"</b> aguardando aprovação</p>
+                    <p className="text-sm text-gray-700">Fornecedor <b>"{s.companyName}"</b> aguardando aprovaÃ§Ã£o</p>
                     <button onClick={()=>setSection("fornecedores")} className="text-xs text-orange-600 font-semibold hover:underline flex items-center gap-1">
                       Aprovar <ChevronRight size={12} />
                     </button>
@@ -706,7 +686,7 @@ export function GestaoPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {["Empresa", "Cidade", "Tipo", "Plano", "Status", "Ações"].map(h => (
+                    {["Empresa", "Cidade", "Tipo", "Plano", "Status", "AÃ§Ãµes"].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -773,7 +753,7 @@ export function GestaoPage() {
 
           <div className="text-center py-4 flex items-center justify-center gap-2 text-xs text-gray-400">
             <CheckCircle size={13} className="text-green-400" />
-            Painel de gestão exclusivo Zup · Acesso restrito à equipe interna
+            Painel de gestÃ£o exclusivo Zup Â· Acesso restrito Ã  equipe interna
           </div>
           </>}
         </main>
@@ -781,3 +761,4 @@ export function GestaoPage() {
     </div>
   );
 }
+
