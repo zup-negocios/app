@@ -18,7 +18,25 @@
       "Read(//mnt/**)",
       "Bash(cmd.exe /c \"dir \\\\\"G:\\\\Meu Drive\\\\Zuppi\\\\central-alianca-360\\\\\"\")",
       "Bash(npm install *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(jobs)",
+      "Bash(mkdir -p /c/Users/bruno/AppData/Local/Temp/claude/G--Meu-Drive-Zup/e8386e8e-074e-4a3e-9c68-ec903476ca5b/scratchpad/supabase-install)",
+      "Bash(npm init *)",
+      "Bash(grep -v \"^@supabase$\")",
+      "Bash(mkdir -p /c/Users/bruno/AppData/Local/Temp/claude/G--Meu-Drive-Zup/e8386e8e-074e-4a3e-9c68-ec903476ca5b/scratchpad/zup-clean-install)",
+      "Bash(cp '/g/Meu Drive/Zup/package.json' /c/Users/bruno/AppData/Local/Temp/claude/G--Meu-Drive-Zup/e8386e8e-074e-4a3e-9c68-ec903476ca5b/scratchpad/zup-clean-install/)",
+      "Bash(cp '/g/Meu Drive/Zup/package-lock.json' /c/Users/bruno/AppData/Local/Temp/claude/G--Meu-Drive-Zup/e8386e8e-074e-4a3e-9c68-ec903476ca5b/scratchpad/zup-clean-install/)",
+      "PowerShell(robocopy $src $dst /E /MT:8 /NFL /NDL /NJH /NJS /NP 2>&1)",
+      "PowerShell($src = \"C:\\\\Users\\\\bruno\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\G--Meu-Drive-Zup\\\\e8386e8e-074e-4a3e-9c68-ec903476ca5b\\\\scratchpad\\\\zup-clean-install\\\\node_modules\")",
+      "PowerShell($dst = \"G:\\\\Meu Drive\\\\Zup\\\\node_modules\")",
+      "Bash(git rm *)",
+      "Bash(echo \"Rodando em background, PID: $!\")",
+      "Bash(ps aux 2>/dev/null | grep \"git rm\" | grep -v grep *)",
+      "PowerShell(ipconfig /flushdns)",
+      "Bash(rm -f \"/g/Meu Drive/Zup/tsconfig.tsbuildinfo\" \"/g/Meu Drive/Zup\"/*.tsbuildinfo 2>&1 *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173/)",
+      "PowerShell(\\(Invoke-WebRequest -Uri \"http://localhost:5173/\" -UseBasicParsing\\).StatusCode)"
     ]
   }
 }

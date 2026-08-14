@@ -1,10 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
 import { bootstrapStorage, store } from "../utils/storage";
 import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
 import { sendCollectiveOrderMessage, sendMetaAchievedMessage, sendImmediateOrderMessage } from "../utils/whatsappService";
 import { onBuyerSignup, onSupplierSignup, onClientImmediatePurchase, onClientCollectiveReservation } from "../utils/autoMessages";
-import { supabase, isSupabaseEnabled } from "../lib/supabase";
+import { isSupabaseEnabled, pushRows, fetchTable } from "../lib/supabase";
+
+function mergeById<T extends { id: string }>(local: T[], remote: T[]): T[] {
+  const map = new Map<string, T>();
+  local.forEach((item) => map.set(item.id, item));
+  remote.forEach((item) => map.set(item.id, item));
+  return Array.from(map.values());
+}
 
 interface AppState {
   buyers: BuyerProfile[];
@@ -78,35 +85,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [buyers, suppliers, offers, reservations, marketOrders, ratings]);
 
-  // Sincronizar com Supabase (opcional - se configurado)
-  useEffect(() => {
-    if (!isSupabaseEnabled() || !supabase) return;
+  // Refs para acessar o estado mais recente dentro do polling (evita closures desatualizadas)
+  const offersRef = useRef(offers);
+  const reservationsRef = useRef(reservations);
+  useEffect(() => { offersRef.current = offers; }, [offers]);
+  useEffect(() => { reservationsRef.current = reservations; }, [reservations]);
 
-    const syncToSupabase = async () => {
-      try {
-        // Sincronizar buyers
-        if (buyers.length > 0) {
-          await supabase!.from("buyers").upsert(buyers, { onConflict: "id" }).then(r => { if (r.error) console.log("Buyers sync skipped:", r.error.message); });
-        }
-        // Sincronizar suppliers
-        if (suppliers.length > 0) {
-          await supabase!.from("suppliers").upsert(suppliers, { onConflict: "id" }).then(r => { if (r.error) console.log("Suppliers sync skipped:", r.error.message); });
-        }
-        // Sincronizar offers
-        if (offers.length > 0) {
-          await supabase!.from("offers").upsert(offers, { onConflict: "id" }).then(r => { if (r.error) console.log("Offers sync skipped:", r.error.message); });
-        }
-      } catch (error) {
-        console.log("Supabase sync error (non-critical):", error);
-      }
+  // Puxar dados do Supabase ao abrir + a cada poucos segundos (sincronizacao entre dispositivos)
+  useEffect(() => {
+    if (!isSupabaseEnabled()) return;
+    let cancelled = false;
+
+    const pullFromSupabase = async () => {
+      const [remoteBuyers, remoteSuppliers, remoteOffers, remoteReservations, remoteMarketOrders] = await Promise.all([
+        fetchTable<BuyerProfile>("buyers"),
+        fetchTable<SupplierProfile>("suppliers"),
+        fetchTable<Offer>("offers"),
+        fetchTable<Reservation>("reservations"),
+        fetchTable<MarketOrder>("market_orders"),
+      ]);
+      if (cancelled) return;
+
+      setBuyers((prev) => {
+        const merged = mergeById(prev, remoteBuyers);
+        store.setBuyers(merged);
+        return merged;
+      });
+      setSuppliers((prev) => {
+        const merged = mergeById(prev, remoteSuppliers);
+        store.setSuppliers(merged);
+        return merged;
+      });
+      setMarketOrders((prev) => {
+        const merged = mergeById(prev, remoteMarketOrders);
+        store.setMarketOrders(merged);
+        return merged;
+      });
+
+      const mergedOffers = mergeById(offersRef.current, remoteOffers).map(updateOfferStatus);
+      const mergedReservations = mergeById(reservationsRef.current, remoteReservations);
+      const recalced = recalcReservationStatuses(mergedOffers, mergedReservations);
+      setOffers(mergedOffers);
+      setReservations(recalced);
+      store.setOffers(mergedOffers);
+      store.setReservations(recalced);
     };
 
-    // Sincronizar a cada 30 segundos (ou quando dados mudam)
-    const timer = setInterval(syncToSupabase, 30000);
-    syncToSupabase(); // Sincronizar imediatamente também
-
-    return () => clearInterval(timer);
-  }, [buyers, suppliers, offers]);
+    pullFromSupabase();
+    const timer = setInterval(pullFromSupabase, 8000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   const syncOffers = (nextOffers: Offer[], sourceReservations = reservations) => {
     const normalized = nextOffers.map(updateOfferStatus);
@@ -115,6 +146,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setReservations(nextReservations);
     store.setOffers(normalized);
     store.setReservations(nextReservations);
+    pushRows("offers", normalized);
+    pushRows("reservations", nextReservations);
   };
 
   const value = useMemo<AppState>(
@@ -160,6 +193,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...buyers, next];
         setBuyers(all);
         store.setBuyers(all);
+        pushRows("buyers", [next]);
         // Enviar mensagem de boas-vindas
         onBuyerSignup(next);
         return next;
@@ -169,6 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...suppliers, next];
         setSuppliers(all);
         store.setSuppliers(all);
+        pushRows("suppliers", [next]);
         // Enviar mensagem com dados de acesso
         onSupplierSignup(next, data.password);
         return next;
@@ -306,6 +341,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = [...marketOrders, newOrder];
         setMarketOrders(all);
         store.setMarketOrders(all);
+        pushRows("market_orders", [newOrder]);
 
         // Enviar mensagem automática ao cliente
         onClientImmediatePurchase(buyer, offer, newOrder);
@@ -319,11 +355,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = marketOrders.map((o) => (o.id === orderId ? { ...o, status } : o));
         setMarketOrders(all);
         store.setMarketOrders(all);
+        pushRows("market_orders", all);
       },
       updateReservationStatus: (reservationId, status) => {
         const all = reservations.map((r) => (r.id === reservationId ? { ...r, status } : r));
         setReservations(all);
         store.setReservations(all);
+        pushRows("reservations", all);
       },
       updateBuyerScore: (buyerId, fulfilled) => {
         const all = buyers.map((b) => {
@@ -335,11 +373,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
         setBuyers(all);
         store.setBuyers(all);
+        pushRows("buyers", all);
       },
       updateSupplierApproval: (id, approved) => {
         const all = suppliers.map((supplier) => (supplier.id === id ? { ...supplier, approved } : supplier));
         setSuppliers(all);
         store.setSuppliers(all);
+        pushRows("suppliers", all);
       },
       updateOfferApproval: (id, approved) => {
         const all: Offer[] = offers.map((offer) => (offer.id === id ? { ...offer, approved, status: approved ? "ativa" : "aguardando_aprovacao" } : offer));
@@ -349,11 +389,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const all = suppliers.map((supplier) => (supplier.id === id ? { ...supplier, planoFornecedor } : supplier));
         setSuppliers(all);
         store.setSuppliers(all);
+        pushRows("suppliers", all);
       },
       updateSupplier: (id, data) => {
         const all = suppliers.map((supplier) => (supplier.id === id ? { ...supplier, ...data } : supplier));
         setSuppliers(all);
         store.setSuppliers(all);
+        pushRows("suppliers", all);
       },
       addCategory: (name) => {
         const trimmed = name.trim();

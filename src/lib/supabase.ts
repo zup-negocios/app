@@ -3,71 +3,43 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Supabase é opcional - funciona com localStorage se não configurado
 export let supabase: SupabaseClient | null = null;
 
 try {
-  if (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith("http")) {
+  if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
-    console.log("✅ Supabase conectado!");
+    console.log("Supabase conectado");
   } else {
-    console.warn("⚠️ Supabase não configurado. Usando localStorage.");
+    console.warn("Supabase nao configurado. Usando localStorage.");
   }
-} catch (e) {
-  console.warn("⚠️ Supabase falhou ao inicializar. Usando localStorage.", e);
+} catch (error) {
+  console.warn("Falha ao inicializar Supabase:", error);
   supabase = null;
 }
 
 export const isSupabaseEnabled = () => supabase !== null;
 
-export type Buyer = {
-  id: string;
-  email: string;
-  password: string;
-  companyName: string;
-  cnpj: string;
-  contactName: string;
-  whatsapp: string;
-  city: string;
-  segment: string;
-  createdAt: string;
-};
+// Cada tabela guarda { id, payload jsonb } - evita mismatch de schema
+// com os tipos reais do app (BuyerProfile, SupplierProfile, Offer, etc.)
+export async function pushRows(table: string, items: Array<{ id: string }>) {
+  if (!supabase || items.length === 0) return;
+  try {
+    const rows = items.map((item) => ({ id: item.id, payload: item, updated_at: new Date().toISOString() }));
+    const { error } = await supabase.from(table).upsert(rows, { onConflict: "id" });
+    if (error) console.log(`Supabase push falhou (${table}):`, error.message);
+  } catch (error) {
+    console.log(`Supabase push erro (${table}):`, error);
+  }
+}
 
-export type Supplier = {
-  id: string;
-  email: string;
-  password: string;
-  companyName: string;
-  cnpj: string;
-  contactName: string;
-  whatsapp: string;
-  city: string;
-  categories: string;
-  supplierType: "fabricante" | "distribuidor" | "representante" | "atacadista";
-  planoFornecedor: "gratuito" | "assinante";
-  createdAt: string;
-};
-
-export type Offer = {
-  id: string;
-  supplierId: string;
-  productName: string;
-  category: string;
-  description?: string;
-  productImage?: string | null;
-  normalPrice: number;
-  minBuyerPurchase: number;
-  shippingCost?: number;
-  paymentMethods: string[];
-  minCollectiveAmount: number;
-  minCollectivePercentage: number;
-  collectiveDeadline: string;
-  marketEnabled: boolean;
-  collectiveEnabled: boolean;
-  tiers: Array<{ percentage: number; price: number }>;
-  productUnit: string;
-  productQuantity: string;
-  reservations: Array<{ buyerId: string; amount: number; quantity: number }>;
-  createdAt: string;
-  publishedAt: string | null;
-};
+export async function fetchTable<T>(table: string): Promise<T[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from(table).select("id, payload");
+    if (error || !data) return [];
+    return data.map((row: { payload: T }) => row.payload);
+  } catch (error) {
+    console.log(`Supabase fetch erro (${table}):`, error);
+    return [];
+  }
+}
