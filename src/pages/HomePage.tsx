@@ -125,8 +125,7 @@ export function HomePage() {
         <div className="relative">
           <div className="rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white shadow-2xl">
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-2xl font-black text-orange-400">Z</span>
-              <span className="text-xl font-bold">uppi</span>
+              <img src="/assets/zup-logo-dark.png" alt="Zup" className="h-7 w-auto" />
               <span className="ml-auto text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">● Ao vivo</span>
             </div>
             <p className="text-2xl font-bold mb-1">Compre junto.</p>
@@ -337,15 +336,14 @@ export function HomePage() {
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-1 mb-3">
-              <span className="text-xl font-black text-orange-400">Z</span>
-              <span className="text-lg font-bold text-white">uppi</span>
+              <img src="/assets/zup-logo-dark.png" alt="Zup" className="h-6 w-auto" />
             </div>
             <p className="text-sm leading-relaxed">O futuro das vendas B2B é coletivo.</p>
           </div>
           {[
             { title: "Plataforma", links: [{ l: "Como funciona", h: "/" }, { l: "Para compradores", h: "/auth?type=buyer" }, { l: "Para fornecedores", h: "/auth?type=supplier" }, { l: "Planos", h: "#planos" }] },
             { title: "Acesso", links: [{ l: "Entrar como comprador", h: "/auth?type=buyer" }, { l: "Entrar como fornecedor", h: "/auth?type=supplier" }, { l: "Ver ofertas", h: "/ofertas" }] },
-            { title: "Contato", links: [{ l: "contato@zuppi.com.br", h: "#" }, { l: "+55 41 4000-0000", h: "#" }, { l: "Curitiba, PR", h: "#" }] },
+            { title: "Contato", links: [{ l: "contato@zup.com.br", h: "#" }, { l: "+55 41 4000-0000", h: "#" }, { l: "Curitiba, PR", h: "#" }] },
           ].map(col => (
             <div key={col.title}>
               <h4 className="text-white font-semibold mb-3 text-sm">{col.title}</h4>
