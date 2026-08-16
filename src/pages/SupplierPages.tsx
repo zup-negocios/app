@@ -1,10 +1,11 @@
 import { FormEvent, useMemo, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import type { Offer } from "../types";
 import toast from "react-hot-toast";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
 import {
-  currency, formatGoal, maxOfferDeadlineInputValue, offerAvailability,
+  currency, formatGoal, maxEditDeadlineInputValue, maxOfferDeadlineInputValue, offerAvailability,
   offerProgress, parseDecimal, todayInputValue,
 } from "../utils/business";
 import {
@@ -593,9 +594,10 @@ function ProductImageUpload({ value, onChange }: { value: string | null; onChang
 type Tier = { percentage: number; price: number };
 
 export function SupplierCreateOfferPage() {
-  const { session, addOffer, categories } = useAppState();
+  const { session, addOffer, categories, cities } = useAppState();
   const navigate = useNavigate();
-  const [targetType, setTargetType] = useState<"quantity" | "amount">("quantity");
+  // Meta de oferta é sempre por quantidade (meta por valor foi removida).
+  const targetType = "quantity" as const;
   const [normalPrice, setNormalPrice] = useState(0);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [marketEnabled, setMarketEnabled] = useState(true);
@@ -621,11 +623,18 @@ export function SupplierCreateOfferPage() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const category = categories.find(c => c.id === String(data.get("categoryId")));
+    const city = cities.find(c => c.id === String(data.get("cityId")));
     const deadline = String(data.get("deadline"));
-    const targetQuantity = targetType === "quantity" ? parseDecimal(data.get("targetQuantity")) : undefined;
-    const targetAmount = targetType === "amount" ? parseDecimal(data.get("targetAmount")) : undefined;
+    const targetQuantity = parseDecimal(data.get("targetQuantity"));
     const validTiers = tiers.filter(t => t.percentage > 0 && t.price > 0);
     const collectiveMinQty = parseDecimal(data.get("collectiveMinQty"));
+
+    // Compra Coletiva ativa sem nenhuma faixa de preço preenchida: o comprador não veria
+    // nenhum valor evolutivo. Bloqueia e avisa em vez de publicar silenciosamente sem faixas.
+    if (collectiveEnabled && validTiers.length === 0) {
+      toast.error("Preencha ao menos uma faixa de preço na Compra Coletiva (% da meta + preço), ou desmarque essa modalidade.");
+      return;
+    }
 
     // Proteger publicação com confirmação
     const confirmed = window.confirm(
@@ -633,12 +642,14 @@ export function SupplierCreateOfferPage() {
       `Produto: ${String(data.get("product"))}\n` +
       `Categoria: ${category?.name || "Outros"}\n` +
       `Preço Zup: R$ ${parseDecimal(data.get("normalPrice"))}\n` +
-      `Meta: ${targetType === "quantity" ? `${targetQuantity} unidades` : `R$ ${targetAmount}`}\n` +
+      `Meta: ${targetQuantity} unidades\n` +
       `Prazo: ${deadline}\n\n` +
       `Depois de publicar, você não poderá voltar desta página.`
     );
 
     if (!confirmed) return;
+
+    const normalPriceValue = parseDecimal(data.get("normalPrice"));
 
     addOffer({
       supplierId: session.id,
@@ -649,18 +660,20 @@ export function SupplierCreateOfferPage() {
       subcategory: String(data.get("subcategory") || ""),
       description: "",
       unit: String(data.get("unit")),
-      normalPrice: parseDecimal(data.get("normalPrice")),
-      zuppiPrice: validTiers.length > 0 ? Math.min(...validTiers.map(t => t.price)) : parseDecimal(data.get("zuppiPrice") || data.get("normalPrice")),
-      minGoal: targetType === "amount" ? targetAmount || 0 : targetQuantity || 0,
+      normalPrice: normalPriceValue,
+      // Preço Zup base: sem input próprio, sempre igual ao preço normal.
+      // Faixas progressivas (progressiveTiers) são o único mecanismo de preço evolutivo.
+      zuppiPrice: normalPriceValue,
+      minGoal: targetQuantity || 0,
       minimumPurchasePerBuyer: collectiveMinQty,
       targetType,
       targetQuantity,
-      targetAmount,
       maxQty: parseDecimal(data.get("maxQty")) || undefined,
       deadline,
-      region: String(data.get("region")),
+      region: city ? `${city.name} — ${city.state}` : "",
+      cityId: city?.id,
       paymentTerms: selectedPaymentMethods.join("; "),
-      deliveryTime: String(data.get("deliveryTime")),
+      deliveryTime: collectiveEnabled ? String(data.get("deliveryTime") || "") : "",
       notes: String(data.get("notes")),
       imageBase64: productImage || undefined,
       marketSaleEnabled: marketEnabled,
@@ -844,18 +857,8 @@ export function SupplierCreateOfferPage() {
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Meta</h2>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="label-base">Tipo de meta</label>
-                  <select value={targetType} onChange={e => setTargetType(e.target.value as "quantity" | "amount")} className="input-base w-full">
-                    <option value="quantity">Meta por quantidade</option>
-                    <option value="amount">Meta por valor (R$)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label-base">{targetType === "quantity" ? "Meta (quantidade)" : "Meta (R$)"}</label>
-                  {targetType === "quantity"
-                    ? <input required name="targetQuantity" inputMode="decimal" placeholder="Ex: 400" className="input-base w-full" />
-                    : <input required name="targetAmount" inputMode="decimal" placeholder="Ex: 50000" className="input-base w-full" />
-                  }
+                  <label className="label-base">Meta (quantidade)</label>
+                  <input required name="targetQuantity" inputMode="decimal" placeholder="Ex: 400" className="input-base w-full" />
                 </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -871,8 +874,13 @@ export function SupplierCreateOfferPage() {
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Condições</h2>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Região atendida</label>
-                  <input required name="region" placeholder="Ex: Curitiba e região" className="input-base w-full" />
+                  <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Cidade atendida</label>
+                  <select required name="cityId" className="input-base w-full" defaultValue="">
+                    <option value="" disabled>Selecione a cidade</option>
+                    {cities.filter(c => c.active).map(c => (
+                      <option key={c.id} value={c.id}>{c.name} — {c.state}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="label-base flex items-center gap-1.5 mb-3"><CreditCard size={13} className="text-gray-400" />Condições de pagamento (selecione 1 ou mais)</label>
@@ -907,14 +915,17 @@ export function SupplierCreateOfferPage() {
                   </div>
                   <p className="text-[11px] text-gray-400 leading-relaxed mt-2">A Zup atua como plataforma facilitadora. Pagamento e demais condições operacionais são tratados diretamente entre comprador e fornecedor.</p>
                 </div>
-                <div>
-                  <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
-                  <select required name="deliveryTime" className="input-base w-full">
-                    {["até 2 dias após fechamento", "até 3 dias após fechamento", "até 5 dias após fechamento", "até 7 dias após fechamento", "até 10 dias após fechamento", "até 15 dias após fechamento"].map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
+                {collectiveEnabled && (
+                  <div>
+                    <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
+                    <select required name="deliveryTime" className="input-base w-full">
+                      {["até 2 dias após fechamento", "até 3 dias após fechamento", "até 5 dias após fechamento", "até 7 dias após fechamento", "até 10 dias após fechamento", "até 15 dias após fechamento"].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">Aplica-se à compra coletiva. Market Zup não tem prazo de entrega fixo.</p>
+                  </div>
+                )}
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
@@ -968,8 +979,100 @@ export function SupplierCreateOfferPage() {
 
 // ─── OFFER DETAIL ──────────────────────────────────────────────────────────────
 
+function SupplierOfferEditForm({ offer }: { offer: Offer }) {
+  const { updateOffer, cities } = useAppState();
+  const navigate = useNavigate();
+  const [formError, setFormError] = useState("");
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
+    const data = new FormData(event.currentTarget);
+    const city = cities.find(c => c.id === String(data.get("cityId")));
+
+    const result = updateOffer(offer.id, {
+      normalPrice: parseDecimal(data.get("normalPrice")),
+      marketPrice: offer.marketSaleEnabled ? parseDecimal(data.get("marketPrice")) : offer.marketPrice,
+      deadline: String(data.get("deadline")),
+      deliveryTime: offer.collectiveSaleEnabled !== false ? String(data.get("deliveryTime") || "") : offer.deliveryTime,
+      region: city ? `${city.name} — ${city.state}` : offer.region,
+      cityId: city?.id ?? offer.cityId,
+      notes: String(data.get("notes") || ""),
+    });
+
+    if (!result.ok) {
+      setFormError(result.message || "Não foi possível salvar as alterações.");
+      return;
+    }
+    toast.success("Oferta atualizada com sucesso!");
+    navigate(`/fornecedor/ofertas/${offer.id}`);
+  };
+
+  const maxDeadline = maxEditDeadlineInputValue(offer.createdAt);
+
+  return (
+    <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-gray-800">Editar oferta</h2>
+        <Link to={`/fornecedor/ofertas/${offer.id}`} className="text-sm text-gray-500 hover:underline">Cancelar</Link>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="label-base">Preço normal (R$)</label>
+          <input required name="normalPrice" type="text" pattern="[0-9.,]+" defaultValue={String(offer.normalPrice).replace(".", ",")} className="input-base w-full" />
+        </div>
+        {offer.marketSaleEnabled && (
+          <div>
+            <label className="label-base">Preço Market Zup (R$)</label>
+            <input required name="marketPrice" type="text" pattern="[0-9.,]+" defaultValue={String(offer.marketPrice ?? offer.normalPrice).replace(".", ",")} className="input-base w-full" />
+          </div>
+        )}
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="label-base flex items-center gap-1.5"><Calendar size={13} className="text-gray-400" />Prazo final da oferta</label>
+          <input required type="date" name="deadline" min={todayInputValue()} max={maxDeadline} defaultValue={offer.deadline} className="input-base w-full" />
+          <p className="text-xs text-gray-400 mt-1">Máximo até {maxDeadline} (lançamento + 3 dias).</p>
+        </div>
+        <div>
+          <label className="label-base flex items-center gap-1.5"><MapPin size={13} className="text-gray-400" />Cidade atendida</label>
+          <select name="cityId" defaultValue={offer.cityId || ""} className="input-base w-full">
+            <option value="">Manter: {offer.region || "não definida"}</option>
+            {cities.filter(c => c.active).map(c => (
+              <option key={c.id} value={c.id}>{c.name} — {c.state}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {offer.collectiveSaleEnabled !== false && (
+        <div>
+          <label className="label-base flex items-center gap-1.5"><Truck size={13} className="text-gray-400" />Prazo de entrega</label>
+          <select required name="deliveryTime" defaultValue={offer.deliveryTime} className="input-base w-full">
+            {["até 2 dias após fechamento", "até 3 dias após fechamento", "até 5 dias após fechamento", "até 7 dias após fechamento", "até 10 dias após fechamento", "até 15 dias após fechamento"].map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label className="label-base">Observações</label>
+        <textarea name="notes" defaultValue={offer.notes} maxLength={200} className="input-base w-full" rows={3} />
+      </div>
+
+      {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
+
+      <button className="btn-primary">Salvar alterações</button>
+    </form>
+  );
+}
+
 export function SupplierOfferDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { session, suppliers, offers, reservations, updateOfferImage } = useAppState();
   if (!session || session.role !== "supplier") return <Navigate to="/auth?type=supplier" replace />;
 
@@ -991,6 +1094,31 @@ export function SupplierOfferDetailPage() {
   const availability = offerAvailability(offer);
   const canSeeDetails = supplier?.planoFornecedor === "assinante";
   const totalAmount = offerRes.reduce((a, r) => a + r.totalAmount, 0);
+  const isEditMode = searchParams.get("edit") === "1";
+
+  if (isEditMode) {
+    if (offer.editStatus === "edicao_bloqueada" || offerRes.length > 0) {
+      return (
+        <DashboardLayout role="supplier">
+          <div className="max-w-5xl space-y-4">
+            <div className="card p-8 text-center border-dashed border-2 border-orange-200 bg-orange-50/50">
+              <Lock size={28} className="mx-auto text-orange-400 mb-2" />
+              <p className="font-bold text-gray-700">Esta oferta já tem compradores interessados</p>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Para alterar, envie uma solicitação de edição para aprovação em vez de editar direto.</p>
+              <Link to={`/fornecedor/ofertas/${offer.id}`} className="btn-secondary mx-auto">Voltar aos detalhes</Link>
+            </div>
+          </div>
+        </DashboardLayout>
+      );
+    }
+    return (
+      <DashboardLayout role="supplier">
+        <div className="max-w-5xl">
+          <SupplierOfferEditForm offer={offer} />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="supplier">
@@ -1003,9 +1131,12 @@ export function SupplierOfferDetailPage() {
             </div>
             <p className="text-sm text-gray-500 mt-0.5">{offer.brand} · {offer.category}</p>
           </div>
-          <button className="btn-secondary" onClick={() => window.print()}>
-            <FileText size={14} /> Imprimir / PDF
-          </button>
+          <div className="flex gap-2">
+            <Link to={`/fornecedor/ofertas/${offer.id}?edit=1`} className="btn-secondary">Editar oferta</Link>
+            <button className="btn-secondary" onClick={() => window.print()}>
+              <FileText size={14} /> Imprimir / PDF
+            </button>
+          </div>
         </div>
 
         <ProductImageUpload

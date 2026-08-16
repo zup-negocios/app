@@ -9,7 +9,7 @@ const buyerSegments = ["mercado", "padaria", "restaurante", "petshop", "farmacia
 export function AuthPage() {
   const [params] = useSearchParams();
   const type = params.get("type");
-  const { session, buyers, suppliers, addBuyer, addSupplier, login } = useAppState();
+  const { session, buyers, suppliers, cities, addBuyer, addSupplier, login } = useAppState();
   const navigate = useNavigate();
 
   const [buyerEmail, setBuyerEmail] = useState("");
@@ -35,6 +35,8 @@ export function AuthPage() {
       return;
     }
 
+    const city = cities.find(c => c.id === String(data.get("cityId")));
+
     const created = addBuyer({
       companyName: String(data.get("companyName")),
       cnpj: String(data.get("cnpj")),
@@ -42,7 +44,8 @@ export function AuthPage() {
       whatsapp: String(data.get("whatsapp")),
       email,
       password,
-      city: String(data.get("city")),
+      city: city ? `${city.name} — ${city.state}` : "",
+      cityId: city?.id,
       segment: String(data.get("segment")),
     });
 
@@ -164,7 +167,10 @@ export function AuthPage() {
                 <input required name="whatsapp" placeholder="WhatsApp" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
                 <input required type="email" name="email" placeholder="E-mail" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
                 <input required type="password" name="password" minLength={6} placeholder="Senha (mín. 6 caracteres)" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
-                <input required name="city" placeholder="Cidade" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+                <select required name="cityId" defaultValue="" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300 bg-white">
+                  <option value="" disabled>Cidade</option>
+                  {cities.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name} — {c.state}</option>)}
+                </select>
                 <select required name="segment" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300 bg-white">
                   <option value="">Segmento da empresa</option>
                   {buyerSegments.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}

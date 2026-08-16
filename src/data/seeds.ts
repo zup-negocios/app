@@ -1,4 +1,15 @@
-import type { BuyerProfile, Category, MarketOrder, Offer, Rating, Reservation, SupplierProfile } from "../types";
+import type { BuyerProfile, Category, City, MarketOrder, Offer, Rating, Reservation, SupplierProfile } from "../types";
+
+export const citySeeds: City[] = [
+  { id: "curitiba", name: "Curitiba", state: "PR", active: true, order: 1 },
+  { id: "sao-jose-dos-pinhais", name: "São José dos Pinhais", state: "PR", active: true, order: 2 },
+  { id: "colombo", name: "Colombo", state: "PR", active: true, order: 3 },
+  { id: "pinhais", name: "Pinhais", state: "PR", active: true, order: 4 },
+  { id: "araucaria", name: "Araucária", state: "PR", active: true, order: 5 },
+  { id: "campo-largo", name: "Campo Largo", state: "PR", active: true, order: 6 },
+  { id: "fazenda-rio-grande", name: "Fazenda Rio Grande", state: "PR", active: true, order: 7 },
+  { id: "almirante-tamandare", name: "Almirante Tamandaré", state: "PR", active: true, order: 8 },
+];
 
 export const categorySeeds: Category[] = [
   { id: "alimentos", name: "Alimentos", icon: "Package", active: true, order: 1, subcategories: ["Farinhas", "Graos", "Oleos", "Acucares", "Carnes", "Congelados", "Panificacao"] },

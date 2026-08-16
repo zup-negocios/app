@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { BuyerProfile, BuyerType, Category, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
+import type { BuyerProfile, BuyerType, Category, City, MarketOrder, MarketOrderStatus, Offer, Rating, RatingTarget, Reservation, ReservationStatus, SessionUser, SupplierProfile } from "../types";
 import { bootstrapStorage, store } from "../utils/storage";
-import { getCurrentCollectivePrice, getReservedValue, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
+import { getCurrentCollectivePrice, getReservedValue, isEditDeadlineValid, parseDecimal, recalcReservationStatuses, updateOfferStatus } from "../utils/business";
 import { sendCollectiveOrderMessage, sendMetaAchievedMessage, sendImmediateOrderMessage } from "../utils/whatsappService";
 import { onBuyerSignup, onSupplierSignup, onClientImmediatePurchase, onClientCollectiveReservation } from "../utils/autoMessages";
 import { isSupabaseEnabled, pushRows, fetchTable } from "../lib/supabase";
@@ -21,6 +21,7 @@ interface AppState {
   marketOrders: MarketOrder[];
   ratings: Rating[];
   categories: Category[];
+  cities: City[];
   session: SessionUser | null;
   login: (role: "buyer" | "supplier", email: string, password: string) => { ok: boolean; message?: string };
   loginAs: (id: string, role: "buyer" | "supplier") => void;
@@ -42,6 +43,8 @@ interface AppState {
   updateSupplier: (id: string, data: Partial<SupplierProfile>) => void;
   addCategory: (name: string) => void;
   toggleCategory: (id: string) => void;
+  addCity: (name: string, state: string) => void;
+  toggleCity: (id: string) => void;
   addRating: (data: Omit<Rating, "id" | "createdAt">) => void;
   getRatingSummary: (targetId: string, targetType: RatingTarget) => { average: number; count: number };
 }
@@ -61,6 +64,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [marketOrders, setMarketOrders] = useState(store.getMarketOrders());
   const [ratings, setRatings] = useState(store.getRatings());
   const [categories, setCategories] = useState(store.getCategories());
+  const [cities, setCities] = useState(store.getCities());
   const [session, setSession] = useState(store.getSession());
 
   // Sincronizar dados do localStorage em tempo real (quando mudanças vêm de outras abas/janelas)
@@ -159,6 +163,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       marketOrders,
       ratings,
       categories,
+      cities,
       session,
       login: (role, email, password) => {
         const normalizedEmail = email.trim().toLowerCase();
@@ -211,6 +216,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addOffer: (data) => {
         const next: Offer = {
           ...data,
+          // Meta de oferta é sempre por quantidade, independente do que o chamador envie.
+          targetType: "quantity",
+          targetAmount: undefined,
           id: uid("offer"),
           reservedQty: 0,
           reservedAmount: 0,
@@ -222,6 +230,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         syncOffers([...offers, next]);
       },
       updateOffer: (id, data) => {
+        const current = offers.find((offer) => offer.id === id);
+        if (!current) return { ok: false, message: "Oferta nao encontrada." };
+
+        // Trava de data: a nova data limite não pode ultrapassar lançamento + 3 dias.
+        // Validado aqui (não só no formulário) para que nenhum caller consiga contornar a regra.
+        if (data.deadline && !isEditDeadlineValid(current.createdAt, data.deadline)) {
+          return { ok: false, message: "A data limite não pode ultrapassar 3 dias após o lançamento da oferta." };
+        }
+
         const hasReservations = reservations.some((reservation) => reservation.offerId === id);
         if (hasReservations) {
           const nextOffers = offers.map((offer) => (offer.id === id ? { ...offer, editStatus: "edicao_solicitada" as const } : offer));
@@ -412,6 +429,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCategories(all);
         store.setCategories(all);
       },
+      addCity: (name, state) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const all: City[] = [
+          ...cities,
+          { id: trimmed.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-"), name: trimmed, state: state.trim().toUpperCase(), active: true, order: cities.length + 1 },
+        ];
+        setCities(all);
+        store.setCities(all);
+      },
+      toggleCity: (id) => {
+        const all = cities.map((city) => (city.id === id ? { ...city, active: !city.active } : city));
+        setCities(all);
+        store.setCities(all);
+      },
       addRating: (data) => {
         const all: Rating[] = [
           ...ratings,
@@ -431,7 +463,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return { average, count: scoped.length };
       },
     }),
-    [buyers, suppliers, offers, reservations, marketOrders, ratings, categories, session],
+    [buyers, suppliers, offers, reservations, marketOrders, ratings, categories, cities, session],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

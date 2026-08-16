@@ -10,17 +10,27 @@ export function AdminPage() {
     offers,
     reservations,
     categories,
+    cities,
     updateSupplierApproval,
     updateSupplierPlan,
     updateOfferApproval,
     addCategory,
     toggleCategory,
+    addCity,
+    toggleCity,
   } = useAppState();
 
   const handleCategory = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     addCategory(String(data.get("category")));
+    event.currentTarget.reset();
+  };
+
+  const handleCity = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    addCity(String(data.get("city")), String(data.get("state")));
     event.currentTarget.reset();
   };
 
@@ -40,6 +50,22 @@ export function AdminPage() {
             {categories.sort((a, b) => a.order - b.order).map((category) => (
               <button key={category.id} className="btn-secondary text-left" onClick={() => toggleCategory(category.id)}>
                 {category.name} - {category.active ? "ativa" : "inativa"}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="card p-4">
+          <h2 className="font-bold mb-2">Cidades</h2>
+          <form onSubmit={handleCity} className="flex gap-2 mb-3">
+            <input name="city" className="border rounded-lg p-2 flex-1" placeholder="Nova cidade" />
+            <input name="state" className="border rounded-lg p-2 w-20" placeholder="UF" maxLength={2} />
+            <button className="btn-primary">Criar</button>
+          </form>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {cities.sort((a, b) => a.order - b.order).map((city) => (
+              <button key={city.id} className="btn-secondary text-left" onClick={() => toggleCity(city.id)}>
+                {city.name} - {city.state} - {city.active ? "ativa" : "inativa"}
               </button>
             ))}
           </div>

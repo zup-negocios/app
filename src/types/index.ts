@@ -27,6 +27,7 @@ export interface BuyerProfile {
   email: string;
   password: string;
   city: string;
+  cityId?: string;
   // Scoring
   rating?: number;
   fulfilledPurchases?: number;
@@ -89,6 +90,7 @@ export interface Offer {
   reservedAmount: number;
   deadline: string;
   region: string;
+  cityId?: string;
   paymentTerms: string;
   deliveryTime: string;
   notes: string;
@@ -185,6 +187,14 @@ export interface Category {
   active: boolean;
   order: number;
   subcategories: string[];
+}
+
+export interface City {
+  id: string;
+  name: string;
+  state: string;
+  active: boolean;
+  order: number;
 }
 
 export type RatingTarget = "buyer" | "supplier";

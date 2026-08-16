@@ -5,22 +5,26 @@ import { DashboardLayout } from "../components/DashboardLayout";
 import { useAppState } from "../components/AppProvider";
 import {
   currency, getBestCollectivePrice, getCurrentCollectivePrice,
-  getMarketPrice, offerProgress,
+  getMarketPrice, matchesBuyerCity, offerProgress,
 } from "../utils/business";
 import { ProgressBarMeta } from "../components/ProgressBarMeta";
 
 // ─── MARKET ZUPPI ────────────────────────────────────────────────────────────
 
 export function BuyerMarketPage() {
-  const { session, offers } = useAppState();
+  const { session, offers, buyers } = useAppState();
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("Todas");
   const [sortBy, setSortBy] = useState<"relevancia" | "menor_preco" | "maior_desconto">("relevancia");
+  const [showAllCities, setShowAllCities] = useState(false);
 
   if (!session || session.role !== "buyer") return <Navigate to="/auth?type=buyer" replace />;
 
+  const buyer = buyers.find(b => b.id === session.id);
+
   const marketOffers = useMemo(() => {
     let list = offers.filter(o => o.marketSaleEnabled && o.status === "ativa");
+    list = list.filter(o => matchesBuyerCity(o, buyer?.cityId, showAllCities));
     if (search) list = list.filter(o =>
       o.product.toLowerCase().includes(search.toLowerCase()) ||
       o.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -34,7 +38,7 @@ export function BuyerMarketPage() {
       return discB - discA;
     });
     return list;
-  }, [offers, search, catFilter, sortBy]);
+  }, [offers, search, catFilter, sortBy, showAllCities, buyer?.cityId]);
 
   const availableCats = useMemo(() => {
     const cats = new Set(offers.filter(o => o.marketSaleEnabled && o.status === "ativa").map(o => o.category));
@@ -75,6 +79,12 @@ export function BuyerMarketPage() {
               className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
             />
           </div>
+          {buyer?.cityId && (
+            <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={showAllCities} onChange={e => setShowAllCities(e.target.checked)} className="w-3.5 h-3.5 accent-orange-500" />
+              Ver ofertas de outras cidades (hoje mostrando só {buyer.city})
+            </label>
+          )}
           {/* Categorias + Ordenação */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex gap-2 overflow-x-auto pb-1 flex-1">
@@ -181,13 +191,16 @@ export function BuyerMarketPage() {
 // ─── COMPRA COLETIVA ─────────────────────────────────────────────────────────
 
 export function BuyerCollectivePage() {
-  const { session, offers, reservations } = useAppState();
+  const { session, offers, reservations, buyers } = useAppState();
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("Todas");
   const [sortBy, setSortBy] = useState<"relevancia" | "maior_progresso" | "menor_preco" | "prazo">("relevancia");
   const [showOnlyJoined, setShowOnlyJoined] = useState(false);
+  const [showAllCities, setShowAllCities] = useState(false);
 
   if (!session || session.role !== "buyer") return <Navigate to="/auth?type=buyer" replace />;
+
+  const buyer = buyers.find(b => b.id === session.id);
 
   const myIntentOfferIds = useMemo(() =>
     new Set(reservations.filter(r => r.buyerId === session.id && r.purchaseMode === "collective").map(r => r.offerId)),
@@ -196,6 +209,7 @@ export function BuyerCollectivePage() {
 
   const collectiveOffers = useMemo(() => {
     let list = offers.filter(o => o.collectiveSaleEnabled !== false && o.status === "ativa");
+    list = list.filter(o => matchesBuyerCity(o, buyer?.cityId, showAllCities));
     if (search) list = list.filter(o =>
       o.product.toLowerCase().includes(search.toLowerCase()) ||
       o.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -211,7 +225,7 @@ export function BuyerCollectivePage() {
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
     return list;
-  }, [offers, search, catFilter, sortBy, showOnlyJoined, myIntentOfferIds]);
+  }, [offers, search, catFilter, sortBy, showOnlyJoined, myIntentOfferIds, showAllCities, buyer?.cityId]);
 
   const availableCats = useMemo(() => {
     const cats = new Set(offers.filter(o => o.collectiveSaleEnabled !== false && o.status === "ativa").map(o => o.category));
@@ -289,6 +303,12 @@ export function BuyerCollectivePage() {
               <Users size={12} /> Participo
             </button>
           </div>
+          {buyer?.cityId && (
+            <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={showAllCities} onChange={e => setShowAllCities(e.target.checked)} className="w-3.5 h-3.5 accent-blue-500" />
+              Ver ofertas de outras cidades (hoje mostrando só {buyer.city})
+            </label>
+          )}
           {/* Categorias + Ordenação */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex gap-2 overflow-x-auto pb-1 flex-1">

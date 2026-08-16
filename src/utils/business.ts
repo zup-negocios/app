@@ -4,6 +4,13 @@ export function getReservedValue(offer: Offer) {
   return offer.reservedAmount || offer.reservedQty * offer.zuppiPrice;
 }
 
+// Ofertas sem cidade definida (dados legados) sempre aparecem, para não sumir
+// ofertas antigas cadastradas antes do campo de cidade existir.
+export function matchesBuyerCity(offer: Offer, buyerCityId: string | undefined, showAllCities: boolean) {
+  if (showAllCities || !buyerCityId) return true;
+  return !offer.cityId || offer.cityId === buyerCityId;
+}
+
 export function getTargetValue(offer: Offer) {
   return offer.targetType === "amount" ? offer.targetAmount || offer.minGoal : offer.targetQuantity || offer.minGoal;
 }
@@ -67,6 +74,28 @@ export function maxOfferDeadlineInputValue() {
   const date = new Date();
   date.setDate(date.getDate() + 3);
   return date.toISOString().slice(0, 10);
+}
+
+// Ao editar, a nova data limite não pode ultrapassar lançamento (createdAt) + 3 dias.
+export function maxEditDeadlineDate(createdAt: string) {
+  const date = new Date(createdAt);
+  date.setDate(date.getDate() + 3);
+  return date;
+}
+
+export function maxEditDeadlineInputValue(createdAt: string) {
+  return maxEditDeadlineDate(createdAt).toISOString().slice(0, 10);
+}
+
+// Valida se uma nova data limite respeita lançamento + 3 dias. Usado tanto no
+// atributo `max` do input quanto na camada de mutação (updateOffer), para não
+// depender só da validação do formulário.
+export function isEditDeadlineValid(createdAt: string, newDeadline: string) {
+  if (!newDeadline) return false;
+  const max = maxEditDeadlineDate(createdAt);
+  max.setHours(23, 59, 59, 999);
+  const selected = new Date(`${newDeadline}T00:00:00`);
+  return selected.getTime() <= max.getTime();
 }
 
 export function isDeadlineWithinThreeDays(dateString: string) {

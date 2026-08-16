@@ -1,5 +1,5 @@
-import { buyerSeeds, categorySeeds, marketOrderSeeds, offerSeeds, ratingSeeds, reservationSeeds, supplierSeeds } from "../data/seeds";
-import type { BuyerProfile, Category, MarketOrder, Offer, Rating, Reservation, SessionUser, SupplierProfile } from "../types";
+import { buyerSeeds, categorySeeds, citySeeds, marketOrderSeeds, offerSeeds, ratingSeeds, reservationSeeds, supplierSeeds } from "../data/seeds";
+import type { BuyerProfile, Category, City, MarketOrder, Offer, Rating, Reservation, SessionUser, SupplierProfile } from "../types";
 
 const KEYS = {
   seedVersion: "zuppi_seed_version",
@@ -10,6 +10,7 @@ const KEYS = {
   marketOrders: "zuppi_market_orders",
   ratings: "zuppi_ratings",
   categories: "zuppi_categories",
+  cities: "zuppi_cities",
   session: "zuppi_session",
 };
 
@@ -52,6 +53,9 @@ export function bootstrapStorage() {
   if (!localStorage.getItem(KEYS.marketOrders) || shouldRefreshSeeds) write(KEYS.marketOrders, marketOrderSeeds);
   if (!localStorage.getItem(KEYS.ratings) || shouldRefreshSeeds) write(KEYS.ratings, ratingSeeds);
   if (!localStorage.getItem(KEYS.categories) || shouldRefreshSeeds) write(KEYS.categories, categorySeeds);
+  // Cidades: só semeia se nunca existiu, para não apagar cidades adicionadas pelo admin
+  // quando a versão do seed dos demais dados for atualizada.
+  if (!localStorage.getItem(KEYS.cities)) write(KEYS.cities, citySeeds);
   migrateAuthData();
   localStorage.setItem(KEYS.seedVersion, CURRENT_SEED_VERSION);
 }
@@ -77,6 +81,9 @@ export const store = {
 
   getCategories: () => read<Category[]>(KEYS.categories, categorySeeds),
   setCategories: (categories: Category[]) => write(KEYS.categories, categories),
+
+  getCities: () => read<City[]>(KEYS.cities, citySeeds),
+  setCities: (cities: City[]) => write(KEYS.cities, cities),
 
   getSession: () => read<SessionUser | null>(KEYS.session, null),
   setSession: (session: SessionUser | null) => {
