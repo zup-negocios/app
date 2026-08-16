@@ -46,7 +46,13 @@ export function AuthPage() {
       password,
       city: city ? `${city.name} — ${city.state}` : "",
       cityId: city?.id,
+      state: city?.state,
       segment: String(data.get("segment")),
+      street: String(data.get("street") || ""),
+      streetNumber: String(data.get("streetNumber") || ""),
+      complement: String(data.get("complement") || ""),
+      neighborhood: String(data.get("neighborhood") || ""),
+      zipCode: String(data.get("zipCode") || ""),
     });
 
     // Auto-login após cadastro
@@ -176,6 +182,16 @@ export function AuthPage() {
                   {buyerSegments.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
               </div>
+
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-4 mb-2">Endereço de entrega</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <input required name="zipCode" placeholder="CEP" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+                <input required name="street" placeholder="Rua / Logradouro" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+                <input required name="streetNumber" placeholder="Número" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+                <input name="complement" placeholder="Complemento (opcional)" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+                <input required name="neighborhood" placeholder="Bairro" className="border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-orange-300" />
+              </div>
+
               {registerError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3">{registerError}</p>}
               {registerSuccess && <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2 mt-3">{registerSuccess}</p>}
               <button className="mt-4 w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 font-bold py-3 rounded-xl transition-colors">

@@ -28,6 +28,12 @@ export interface BuyerProfile {
   password: string;
   city: string;
   cityId?: string;
+  state?: string;
+  // Endereço de entrega
+  street?: string;
+  streetNumber?: string;
+  complement?: string;
+  zipCode?: string;
   // Scoring
   rating?: number;
   fulfilledPurchases?: number;
